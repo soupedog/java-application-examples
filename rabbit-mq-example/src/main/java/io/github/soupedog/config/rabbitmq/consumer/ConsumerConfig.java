@@ -6,6 +6,7 @@ import io.github.soupedog.listener.HyggeEventBListener;
 import io.github.soupedog.listener.HyggeEventCListener;
 import io.github.soupedog.listener.HyggeMainListener;
 import org.springframework.amqp.core.AcknowledgeMode;
+import org.springframework.amqp.core.HeadersExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
@@ -42,7 +43,7 @@ public class ConsumerConfig {
     }
 
     /**
-     * Queue 创建过程见 {@link EventBusConfig#eventBusHeadersExchange(RabbitAdmin, ConfigurableBeanFactory)}
+     * Queue 创建过程见 {@link EventBusConfig#deadEventBusHeadersExchange(RabbitAdmin, HeadersExchange, ConfigurableBeanFactory)}
      * <p>
      * 托管到 Spring 上下文后，服务运行期间 Queue 被删除时会自动创建
      */
@@ -65,7 +66,7 @@ public class ConsumerConfig {
     }
 
     /**
-     * Queue 创建过程见 {@link EventBusConfig#eventBusHeadersExchange(RabbitAdmin, ConfigurableBeanFactory)}
+     * Queue 创建过程见 {@link EventBusConfig#deadEventBusHeadersExchange(RabbitAdmin, HeadersExchange, ConfigurableBeanFactory)}
      * <p>
      * 托管到 Spring 上下文后，服务运行期间 Queue 被删除时会自动创建
      */
@@ -88,7 +89,7 @@ public class ConsumerConfig {
     }
 
     /**
-     * Queue 创建过程见 {@link EventBusConfig#eventBusHeadersExchange(RabbitAdmin, ConfigurableBeanFactory)}
+     * Queue 创建过程见 {@link EventBusConfig#deadEventBusHeadersExchange(RabbitAdmin, HeadersExchange, ConfigurableBeanFactory)}
      * <p>
      * 托管到 Spring 上下文后，服务运行期间 Queue 被删除时会自动创建
      */
