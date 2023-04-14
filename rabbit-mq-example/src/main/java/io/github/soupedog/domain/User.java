@@ -1,6 +1,6 @@
 package io.github.soupedog.domain;
 
-import io.github.soupedog.listener.base.HyggeRabbitMessageEntity;
+import io.github.soupedog.listener.base.definition.HyggeRabbitMessageEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 

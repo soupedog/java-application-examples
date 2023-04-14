@@ -1,7 +1,7 @@
 package io.github.soupedog.service.client;
 
 import io.github.soupedog.config.rabbitmq.configuration.RabbitMqConfigurationProperties;
-import io.github.soupedog.listener.base.HyggeRabbitMessageEntity;
+import io.github.soupedog.listener.base.definition.HyggeRabbitMessageEntity;
 import hygge.commons.constant.ConstantParameters;
 import hygge.web.template.HyggeWebUtilContainer;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +23,7 @@ import java.nio.charset.StandardCharsets;
 @Slf4j
 @Component
 public class RabbitClient extends HyggeWebUtilContainer {
-    public static final String KEY_MESSAGE_ID = "hygge-unique-id";
+    public static final String HEADERS_KEY_HYGGE_UNIQUE_ID = "hygge-unique-id";
     public static final String KEY_EVENT_TYPE = "event-type";
 
     @Autowired
@@ -51,7 +51,7 @@ public class RabbitClient extends HyggeWebUtilContainer {
 
         rabbitTemplate.send(exchange, routingKey, message);
 
-        String logInfo = String.format("RabbitClient send message to %s-%s.%sheaders:%s%sbody:%s",
+        String logInfo = String.format("RabbitClient send message. exchange:%s routingKey:%s%sheaders:%s%sbody:%s",
                 exchange,
                 routingKey,
                 ConstantParameters.LINE_SEPARATOR,
@@ -65,7 +65,7 @@ public class RabbitClient extends HyggeWebUtilContainer {
         String body = jsonHelper.formatAsString(entity);
         return MessageBuilder.withBody(body.getBytes(StandardCharsets.UTF_8))
                 .setContentType("application/json")
-                .setHeader(KEY_MESSAGE_ID, entity.getUniqueIdentification())
+                .setHeader(HEADERS_KEY_HYGGE_UNIQUE_ID, entity.getUniqueIdentification())
                 .build();
     }
 }

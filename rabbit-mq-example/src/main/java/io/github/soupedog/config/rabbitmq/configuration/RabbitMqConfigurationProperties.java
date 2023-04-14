@@ -1,9 +1,8 @@
 package io.github.soupedog.config.rabbitmq.configuration;
 
-import io.github.soupedog.config.rabbitmq.configuration.inner.Annotation;
-import io.github.soupedog.config.rabbitmq.configuration.inner.EventBus;
-import io.github.soupedog.config.rabbitmq.configuration.inner.Main;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+
+import java.util.ArrayList;
 
 /**
  * @author Xavier
@@ -20,6 +19,7 @@ public class RabbitMqConfigurationProperties {
     private Main main;
     private EventBus eventBus;
     private Annotation annotation;
+    private Batch batch;
 
     public String getEnvironmentName() {
         return environmentName;
@@ -83,5 +83,180 @@ public class RabbitMqConfigurationProperties {
 
     public void setAnnotation(Annotation annotation) {
         this.annotation = annotation;
+    }
+
+    public Batch getBatch() {
+        return batch;
+    }
+
+    public void setBatch(Batch batch) {
+        this.batch = batch;
+    }
+
+    /**
+     * @author Xavier
+     * @date 2023/4/14
+     * @since 1.0
+     */
+    public static class Main {
+        private String exchange;
+        private String routingKey;
+
+        public String getExchange() {
+            return exchange;
+        }
+
+        public void setExchange(String exchange) {
+            this.exchange = exchange;
+        }
+
+        public String getRoutingKey() {
+            return routingKey;
+        }
+
+        public void setRoutingKey(String routingKey) {
+            this.routingKey = routingKey;
+        }
+    }
+
+    /**
+     * @author Xavier
+     * @date 2023/4/14
+     * @since 1.0
+     */
+    public static class EventBus {
+        public String exchange;
+        public String deadExchange;
+        public ArrayList<String> eventNames;
+        private Integer ttlMillisecond;
+
+        public String getExchange() {
+            return exchange;
+        }
+
+        public void setExchange(String exchange) {
+            this.exchange = exchange;
+        }
+
+        public ArrayList<String> getEventNames() {
+            return eventNames;
+        }
+
+        public String getDeadExchange() {
+            return deadExchange;
+        }
+
+        public void setDeadExchange(String deadExchange) {
+            this.deadExchange = deadExchange;
+        }
+
+        public void setEventNames(ArrayList<String> eventNames) {
+            this.eventNames = eventNames;
+        }
+
+        public Integer getTtlMillisecond() {
+            return ttlMillisecond;
+        }
+
+        public void setTtlMillisecond(Integer ttlMillisecond) {
+            this.ttlMillisecond = ttlMillisecond;
+        }
+    }
+
+    /**
+     * @author Xavier
+     * @date 2023/4/14
+     * @since 1.0
+     */
+    public static class Annotation {
+        private String exchange;
+        private String routingKey;
+        private Integer ttlMillisecond;
+        private String deadExchange;
+        private String deadRoutingKey;
+        private Integer deadTtlMillisecond;
+
+        public String getExchange() {
+            return exchange;
+        }
+
+        public void setExchange(String exchange) {
+            this.exchange = exchange;
+        }
+
+        public String getRoutingKey() {
+            return routingKey;
+        }
+
+        public void setRoutingKey(String routingKey) {
+            this.routingKey = routingKey;
+        }
+
+        public Integer getTtlMillisecond() {
+            return ttlMillisecond;
+        }
+
+        public void setTtlMillisecond(Integer ttlMillisecond) {
+            this.ttlMillisecond = ttlMillisecond;
+        }
+
+        public String getDeadExchange() {
+            return deadExchange;
+        }
+
+        public void setDeadExchange(String deadExchange) {
+            this.deadExchange = deadExchange;
+        }
+
+        public String getDeadRoutingKey() {
+            return deadRoutingKey;
+        }
+
+        public void setDeadRoutingKey(String deadRoutingKey) {
+            this.deadRoutingKey = deadRoutingKey;
+        }
+
+        public Integer getDeadTtlMillisecond() {
+            return deadTtlMillisecond;
+        }
+
+        public void setDeadTtlMillisecond(Integer deadTtlMillisecond) {
+            this.deadTtlMillisecond = deadTtlMillisecond;
+        }
+    }
+
+    /**
+     * @author Xavier
+     * @date 2023/4/14
+     * @since 1.0
+     */
+    public static class Batch {
+        private String exchange;
+        private String routingKey;
+        private Integer batchSize;
+
+        public String getExchange() {
+            return exchange;
+        }
+
+        public void setExchange(String exchange) {
+            this.exchange = exchange;
+        }
+
+        public String getRoutingKey() {
+            return routingKey;
+        }
+
+        public void setRoutingKey(String routingKey) {
+            this.routingKey = routingKey;
+        }
+
+        public Integer getBatchSize() {
+            return batchSize;
+        }
+
+        public void setBatchSize(Integer batchSize) {
+            this.batchSize = batchSize;
+        }
     }
 }

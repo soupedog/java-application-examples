@@ -1,4 +1,4 @@
-package io.github.soupedog.listener.base;
+package io.github.soupedog.listener.base.definition;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 

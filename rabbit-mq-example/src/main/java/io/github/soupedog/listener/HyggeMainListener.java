@@ -35,7 +35,11 @@ public class HyggeMainListener extends HyggeChannelAwareMessageListener<User> {
     }
 
     @Override
-    public void finishHook(HyggeRabbitMqListenerContext context) {
-        MDC.remove("traceId");
+    public void finallyHook(HyggeRabbitMqListenerContext context) {
+        try {
+            MDC.remove("traceId");
+        } catch (Exception e) {
+            log.error("Unexpected exception.", e);
+        }
     }
 }

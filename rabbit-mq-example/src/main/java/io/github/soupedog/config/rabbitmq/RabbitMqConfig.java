@@ -1,10 +1,7 @@
 package io.github.soupedog.config.rabbitmq;
 
-import io.github.soupedog.config.rabbitmq.utils.RabbitmqTemplateBuilder;
 import io.github.soupedog.config.rabbitmq.configuration.RabbitMqConfigurationProperties;
-import io.github.soupedog.config.rabbitmq.configuration.inner.Annotation;
-import io.github.soupedog.config.rabbitmq.configuration.inner.EventBus;
-import io.github.soupedog.config.rabbitmq.configuration.inner.Main;
+import io.github.soupedog.config.rabbitmq.utils.RabbitmqTemplateBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
@@ -25,7 +22,7 @@ import org.springframework.context.annotation.Primary;
  * @since 1.0
  */
 @Configuration
-@EnableConfigurationProperties(value = {RabbitMqConfigurationProperties.class, Main.class, EventBus.class, Annotation.class})
+@EnableConfigurationProperties(value = {RabbitMqConfigurationProperties.class})
 public class RabbitMqConfig {
     private static final Logger log = LoggerFactory.getLogger(RabbitMqConfig.class);
     private final RabbitMqConfigurationProperties properties;
@@ -59,6 +56,7 @@ public class RabbitMqConfig {
         return new RabbitAdmin(mainRabbitmqConnectionFactory);
     }
 
+    @Primary
     @Bean("mainRabbitTemplate")
     public RabbitTemplate mainRabbitTemplate(@Qualifier("mainRabbitmqConnectionFactory") CachingConnectionFactory mainRabbitmqConnectionFactory) {
         return RabbitmqTemplateBuilder.buildRabbitTemplate(mainRabbitmqConnectionFactory, log, "main");

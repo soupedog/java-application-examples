@@ -2,7 +2,6 @@ package io.github.soupedog.listener.base;
 
 import com.rabbitmq.client.Channel;
 import hygge.commons.template.container.base.AbstractHyggeContext;
-import org.springframework.amqp.core.Message;
 import org.springframework.boot.logging.LogLevel;
 
 /**
@@ -10,14 +9,14 @@ import org.springframework.boot.logging.LogLevel;
  * @date 2023/4/14
  * @since 1.0
  */
-public class HyggeRabbitMqListenerContext extends AbstractHyggeContext<String> {
+public class HyggeRabbitMqListenerContext<T> extends AbstractHyggeContext<String> {
     private long startTs = System.currentTimeMillis();
     private LogLevel loglevel = LogLevel.INFO;
-    private Message message;
+    private T rwaMessage;
     private Channel channel;
     private boolean autoAckTriggered = false;
     private boolean retryable = true;
-    private boolean finishHookEnable = false;
+    private boolean businessLogicFinishEnable = false;
     private Throwable throwable;
 
     public long getStartTs() {
@@ -36,12 +35,12 @@ public class HyggeRabbitMqListenerContext extends AbstractHyggeContext<String> {
         this.loglevel = loglevel;
     }
 
-    public Message getMessage() {
-        return message;
+    public T getRwaMessage() {
+        return rwaMessage;
     }
 
-    public void setMessage(Message message) {
-        this.message = message;
+    public void setRwaMessage(T rwaMessage) {
+        this.rwaMessage = rwaMessage;
     }
 
     public Channel getChannel() {
@@ -68,12 +67,12 @@ public class HyggeRabbitMqListenerContext extends AbstractHyggeContext<String> {
         this.retryable = retryable;
     }
 
-    public boolean isFinishHookEnable() {
-        return finishHookEnable;
+    public boolean isBusinessLogicFinishEnable() {
+        return businessLogicFinishEnable;
     }
 
-    public void setFinishHookEnable(boolean finishHookEnable) {
-        this.finishHookEnable = finishHookEnable;
+    public void setBusinessLogicFinishEnable(boolean businessLogicFinishEnable) {
+        this.businessLogicFinishEnable = businessLogicFinishEnable;
     }
 
     public boolean isExceptionOccurred() {
