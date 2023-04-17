@@ -40,10 +40,10 @@ public class HyggeBatchListener extends HyggeChannelAwareBatchMessageListener<Us
     @Override
     public void onReceive(HyggeRabbitMqBatchListenerContext<User> context) {
         for (HyggeBatchMessageItem<User> item : context.getRawMessageList()) {
-//            if (randomHelper.getRandomInteger(0, 9) > 8) {
-//                item.setThrowable(new LightRuntimeException("模拟异常"));
-//                item.setAction(ActionEnum.NEEDS_NACK);
-//            }
+            if (randomHelper.getRandomInteger(0, 9) > 8) {
+                item.setThrowable(new LightRuntimeException("模拟异常"));
+                item.setAction(ActionEnum.NEEDS_NACK);
+            }
         }
     }
 }

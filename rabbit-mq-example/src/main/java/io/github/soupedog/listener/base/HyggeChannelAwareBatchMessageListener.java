@@ -209,7 +209,17 @@ public abstract class HyggeChannelAwareBatchMessageListener<T> implements HyggeB
                         prefixInfo = String.format("HyggeBatchListener(%s) some exception occurred during requeue.", getListenerName());
                     }
 
-                    for (HyggeBatchMessageItem<T> item : context.getRawMessageList()) {
+                    List<HyggeBatchMessageItem<T>> unexpectedItemList = collectionHelper.filterNonemptyItemAsArrayList(false, needsRequeueMessageList,
+                            (item -> {
+                                if (!item.getAction().equals(ActionEnum.REQUEUE_SUCCESS)) {
+                                    return item;
+                                } else {
+                                    return null;
+                                }
+                            })
+                    );
+
+                    for (HyggeBatchMessageItem<T> item : unexpectedItemList) {
                         String headersStringVal = formatMessageHeadersAsString(context, item);
                         String messageStringVal = formatMessageBodyAsString(context, item);
                         item.setHeadersStringVal(headersStringVal);
@@ -220,7 +230,7 @@ public abstract class HyggeChannelAwareBatchMessageListener<T> implements HyggeB
                         item.setMessageStringVal(messageBodyOverwrite(context, item));
                     }
 
-                    printMessageEntityLog(context.getLoglevel(), needsRequeueMessageList, prefixInfo);
+                    printMessageEntityLog(context.getLoglevel(), unexpectedItemList, prefixInfo);
                     break;
                 default:
                     // do nothing by default
