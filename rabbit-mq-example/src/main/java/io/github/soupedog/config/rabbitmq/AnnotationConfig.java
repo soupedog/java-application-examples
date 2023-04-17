@@ -27,14 +27,14 @@ public class AnnotationConfig {
     }
 
     @Bean("annotationTopicExchange")
-    public TopicExchange annotationTopicExchange(@Qualifier("maiRabbitAdmin") RabbitAdmin rabbitAdmin) {
+    public TopicExchange annotationTopicExchange(@Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin) {
         TopicExchange topicExchange = new TopicExchange(properties.getAnnotation().getExchange() + ".topic");
         topicExchange.setAdminsThatShouldDeclare(rabbitAdmin);
         return topicExchange;
     }
 
     @Bean("annotationTopicQueue")
-    public Queue annotationTopicQueue(@Qualifier("maiRabbitAdmin") RabbitAdmin rabbitAdmin) {
+    public Queue annotationTopicQueue(@Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin) {
         Queue queue = QueueBuilder
                 .durable(properties.getAnnotation().getExchange() + ".topic")
                 .ttl(properties.getAnnotation().getTtlMillisecond())
@@ -47,7 +47,7 @@ public class AnnotationConfig {
     }
 
     @Bean
-    public Binding bindingAnnotationTopicQueue(@Qualifier("maiRabbitAdmin") RabbitAdmin rabbitAdmin, @Qualifier("annotationTopicQueue") Queue queue, @Qualifier("annotationTopicExchange") TopicExchange exchange) {
+    public Binding bindingAnnotationTopicQueue(@Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin, @Qualifier("annotationTopicQueue") Queue queue, @Qualifier("annotationTopicExchange") TopicExchange exchange) {
         Binding binding = BindingBuilder.bind(queue).to(exchange).with(properties.getAnnotation().getRoutingKey());
 
         binding.setAdminsThatShouldDeclare(rabbitAdmin);
@@ -55,14 +55,14 @@ public class AnnotationConfig {
     }
 
     @Bean("deadAnnotationTopicExchange")
-    public TopicExchange deadAnnotationTopicExchange(@Qualifier("maiRabbitAdmin") RabbitAdmin rabbitAdmin) {
+    public TopicExchange deadAnnotationTopicExchange(@Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin) {
         TopicExchange topicExchange = new TopicExchange(properties.getAnnotation().getDeadExchange() + ".topic");
         topicExchange.setAdminsThatShouldDeclare(rabbitAdmin);
         return topicExchange;
     }
 
     @Bean("deadAnnotationTopicQueue")
-    public Queue deadAnnotationTopicQueue(@Qualifier("maiRabbitAdmin") RabbitAdmin rabbitAdmin) {
+    public Queue deadAnnotationTopicQueue(@Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin) {
         Queue queue = QueueBuilder
                 .durable(properties.getAnnotation().getDeadExchange() + ".topic")
                 .ttl(properties.getAnnotation().getDeadTtlMillisecond())
@@ -75,7 +75,7 @@ public class AnnotationConfig {
     }
 
     @Bean
-    public Binding bindingDeadAnnotationTopicQueue(@Qualifier("maiRabbitAdmin") RabbitAdmin rabbitAdmin, @Qualifier("deadAnnotationTopicQueue") Queue queue, @Qualifier("deadAnnotationTopicExchange") TopicExchange exchange) {
+    public Binding bindingDeadAnnotationTopicQueue(@Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin, @Qualifier("deadAnnotationTopicQueue") Queue queue, @Qualifier("deadAnnotationTopicExchange") TopicExchange exchange) {
         Binding binding = BindingBuilder.bind(queue).to(exchange).with(properties.getAnnotation().getDeadRoutingKey());
 
         binding.setAdminsThatShouldDeclare(rabbitAdmin);

@@ -51,7 +51,7 @@ public class RabbitMqConfig {
     }
 
     @Primary
-    @Bean("maiRabbitAdmin")
+    @Bean("mainRabbitAdmin")
     public RabbitAdmin admin(@Qualifier("mainRabbitmqConnectionFactory") CachingConnectionFactory mainRabbitmqConnectionFactory) {
         return new RabbitAdmin(mainRabbitmqConnectionFactory);
     }

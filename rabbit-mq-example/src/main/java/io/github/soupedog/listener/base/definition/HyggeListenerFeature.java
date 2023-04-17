@@ -10,16 +10,23 @@ import java.util.Map;
  * @date 2023/4/14
  * @since 1.0
  */
-public interface HyggeListenerFeature<T> extends HyggeListenerBaseFeature {
+public interface HyggeListenerFeature<T> extends HyggeListenerBaseFeature, HyggeListenerOperator {
 
     /**
-     * 是否要将当前消息发送回原队列尾部
+     * 是否要将当前消息发送回原队列
      * <p>
-     * 常用于标记接收的消息不属于当前实例，不应进行消费进而丢回队尾
+     * 常用于标记接收的消息不属于当前实例，不应进行消费并尝试将当前消息恢复到等效于被消费前的状态
      */
-    default boolean isRequeueToTailEnable(HyggeRabbitMqListenerContext<Message> context) throws Exception {
+    default boolean isRequeueEnable(HyggeRabbitMqListenerContext<Message> context) throws Exception {
         return false;
     }
+
+    /**
+     * 如果 {@link HyggeListenerFeature#isRequeueEnable(HyggeRabbitMqListenerContext)} 为 true，则将当前消息恢复到等效于被消费前的状态
+     * <p>
+     * 该方法默认实现的机制是先 ack 当前消息，再将当前消息丢回队尾，可能产生消息丢失
+     */
+    void requeue(HyggeRabbitMqListenerContext<Message> context) throws Exception;
 
     /**
      * 将队列消息 Headers 转化成字符串形式
@@ -71,6 +78,11 @@ public interface HyggeListenerFeature<T> extends HyggeListenerBaseFeature {
      * 收到消息后需要做的业务处理
      */
     void onReceive(HyggeRabbitMqListenerContext<Message> context, T messageEntity) throws Exception;
+
+    /**
+     * 根据 {@link HyggeRabbitMqListenerContext#isAutoAckTriggered()} 属性，如果为 true 则自动进行下列 ACK 操作之一：成功消费、消费失败丢弃
+     */
+    void autoAck(HyggeRabbitMqListenerContext<Message> context, String headersStringVal, String messageStringVal);
 
     /**
      * 尝试重试行为，返回是否确实执行了重试逻辑

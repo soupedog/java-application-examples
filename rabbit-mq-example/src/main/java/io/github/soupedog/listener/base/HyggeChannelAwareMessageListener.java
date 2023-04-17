@@ -56,7 +56,7 @@ public abstract class HyggeChannelAwareMessageListener<T> implements HyggeListen
 
         try {
             // 是否忽略当前消息，并丢回队列尾部
-            if (isRequeueToTailEnable(context)) {
+            if (isRequeueEnable(context)) {
                 requeue(context);
                 return;
             }
@@ -82,7 +82,7 @@ public abstract class HyggeChannelAwareMessageListener<T> implements HyggeListen
 
             // 日志对象覆写
             headersStringVal = messageHeadersOverwrite(context, headersStringVal, message.getMessageProperties().getHeaders());
-            messageStringVal = messageBodyOverwrite(context, headersStringVal, messageEntity);
+            messageStringVal = messageBodyOverwrite(context, messageStringVal, messageEntity);
 
             String prefixInfo = String.format("HyggeListener(%s) received message.", getListenerName());
             printMessageEntityLog(context, prefixInfo, headersStringVal, messageStringVal);
@@ -126,43 +126,14 @@ public abstract class HyggeChannelAwareMessageListener<T> implements HyggeListen
     }
 
     @Override
-    public boolean isRequeueToTailEnable(HyggeRabbitMqListenerContext<Message> context) {
+    public boolean isRequeueEnable(HyggeRabbitMqListenerContext<Message> context) {
         String messageEnvironmentName = getValueFromHeaders(context, context.getRwaMessage(), HEADERS_KEY_ENVIRONMENT_NAME, true);
 
         return !environmentName.equals(messageEnvironmentName) && parameterHelper.isNotEmpty(messageEnvironmentName);
     }
 
     @Override
-    public String formatMessageHeadersAsString(HyggeRabbitMqListenerContext<Message> context) {
-        return jsonHelper.formatAsString(context.getRwaMessage().getMessageProperties().getHeaders());
-    }
-
-    @Override
-    public String formatMessageBodyAsString(HyggeRabbitMqListenerContext<Message> context) {
-        return new String(context.getRwaMessage().getBody(), StandardCharsets.UTF_8);
-    }
-
-    @Override
-    public void printMessageEntityLog(HyggeRabbitMqListenerContext<Message> context, String prefixInfo, String headersStringVal, String messageStringVal) {
-        String logInfo = String.format("%s%sheaders:%s%sbody:%s",
-                prefixInfo,
-                ConstantParameters.LINE_SEPARATOR,
-                headersStringVal,
-                ConstantParameters.LINE_SEPARATOR,
-                messageStringVal);
-
-        printLog(context.getLoglevel(), logInfo);
-    }
-
-    @Override
-    public void businessLogicFinishHook(HyggeRabbitMqListenerContext<Message> context) {
-        // 默认啥也不干
-    }
-
-    /**
-     * 该方法机制是先 ack 当前消息，再将当前消息丢回队尾，可能产生消息丢失
-     */
-    protected void requeue(HyggeRabbitMqListenerContext<Message> context) throws Exception {
+    public void requeue(HyggeRabbitMqListenerContext<Message> context) throws Exception {
         try {
             ack(context);
 
@@ -209,10 +180,30 @@ public abstract class HyggeChannelAwareMessageListener<T> implements HyggeListen
         }
     }
 
-    /**
-     * 根据 {@link HyggeRabbitMqListenerContext#isAutoAckTriggered()} 属性，如果为 true 则自动进行下列 ACK 操作之一：成功消费、消费失败丢弃
-     */
-    protected void autoAck(HyggeRabbitMqListenerContext<Message> context, String headersStringVal, String messageStringVal) {
+    @Override
+    public String formatMessageHeadersAsString(HyggeRabbitMqListenerContext<Message> context) {
+        return jsonHelper.formatAsString(context.getRwaMessage().getMessageProperties().getHeaders());
+    }
+
+    @Override
+    public String formatMessageBodyAsString(HyggeRabbitMqListenerContext<Message> context) {
+        return new String(context.getRwaMessage().getBody(), StandardCharsets.UTF_8);
+    }
+
+    @Override
+    public void printMessageEntityLog(HyggeRabbitMqListenerContext<Message> context, String prefixInfo, String headersStringVal, String messageStringVal) {
+        String logInfo = String.format("%s%sheaders:%s%sbody:%s",
+                prefixInfo,
+                ConstantParameters.LINE_SEPARATOR,
+                headersStringVal,
+                ConstantParameters.LINE_SEPARATOR,
+                messageStringVal);
+
+        printLog(context.getLoglevel(), logInfo);
+    }
+
+    @Override
+    public void autoAck(HyggeRabbitMqListenerContext<Message> context, String headersStringVal, String messageStringVal) {
         try {
             // 自动 ack
             if (!context.isAutoAckTriggered()) {
@@ -235,31 +226,6 @@ public abstract class HyggeChannelAwareMessageListener<T> implements HyggeListen
 
             // 将异常存入上下文
             context.setThrowable(e);
-        }
-    }
-
-    protected void ack(HyggeRabbitMqListenerContext<Message> context) throws Exception {
-        try {
-            long deliveryTag = context.getRwaMessage().getMessageProperties().getDeliveryTag();
-            context.getChannel().basicAck(deliveryTag, false);
-            context.setAutoAckTriggered(true);
-        } catch (Exception e) {
-            // 负反馈机制，防止加剧 ack/nack 不正常，不许重试
-            context.setRetryable(false);
-            throw e;
-        }
-    }
-
-    protected void nack(HyggeRabbitMqListenerContext<Message> context) throws Exception {
-        try {
-            // 丢弃
-            long deliveryTag = context.getRwaMessage().getMessageProperties().getDeliveryTag();
-            context.getChannel().basicNack(deliveryTag, false, false);
-            context.setAutoAckTriggered(true);
-        } catch (Exception e) {
-            // 负反馈机制，防止加剧 ack/nack 不正常，不许重试
-            context.setRetryable(false);
-            throw e;
         }
     }
 }

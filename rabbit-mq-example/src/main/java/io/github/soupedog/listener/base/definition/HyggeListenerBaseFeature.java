@@ -5,6 +5,8 @@ import hygge.util.UtilCreator;
 import hygge.util.definition.CollectionHelper;
 import hygge.util.definition.JsonHelper;
 import hygge.util.definition.ParameterHelper;
+import io.github.soupedog.listener.base.ActionEnum;
+import io.github.soupedog.listener.base.HyggeBatchMessageItem;
 import io.github.soupedog.listener.base.HyggeRabbitMqListenerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +38,16 @@ public interface HyggeListenerBaseFeature {
             // 参数有误，无法自愈，所以设置不再允许重试
             context.setRetryable(false);
             throw new ParameterRuntimeException(getListenerName() + " fail to get [" + key + "] from headers of rabbitmq message, it can't be empty.");
+        }
+        return result;
+    }
+
+    default String getValueFromHeaders(HyggeBatchMessageItem<?> messageItem, String key, boolean nullable) {
+        String result = getValueFromHeaders(messageItem.getMessage(), key);
+        if (!nullable && !StringUtils.hasText(result)) {
+            // 参数有误，无法自愈
+            messageItem.setAction(ActionEnum.NEEDS_NACK);
+            messageItem.setThrowable(new ParameterRuntimeException(getListenerName() + " fail to get [" + key + "] from headers of rabbitmq message, it can't be empty."));
         }
         return result;
     }

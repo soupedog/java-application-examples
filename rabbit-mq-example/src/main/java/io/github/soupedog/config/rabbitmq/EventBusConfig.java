@@ -34,14 +34,14 @@ public class EventBusConfig {
     }
 
     @Bean("eventBusHeadersExchange")
-    public HeadersExchange eventBusHeadersExchange(@Qualifier("maiRabbitAdmin") RabbitAdmin rabbitAdmin) {
+    public HeadersExchange eventBusHeadersExchange(@Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin) {
         HeadersExchange exchange = new HeadersExchange(properties.getEventBus().getExchange());
         exchange.setAdminsThatShouldDeclare(rabbitAdmin);
         return exchange;
     }
 
     @Bean("deadEventBusHeadersExchange")
-    public HeadersExchange deadEventBusHeadersExchange(@Qualifier("maiRabbitAdmin") RabbitAdmin rabbitAdmin, @Qualifier("eventBusHeadersExchange") HeadersExchange exchange, @Autowired ConfigurableBeanFactory factory) {
+    public HeadersExchange deadEventBusHeadersExchange(@Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin, @Qualifier("eventBusHeadersExchange") HeadersExchange exchange, @Autowired ConfigurableBeanFactory factory) {
         HeadersExchange topicExchange = new HeadersExchange(properties.getEventBus().getDeadExchange());
         topicExchange.setAdminsThatShouldDeclare(rabbitAdmin);
 
@@ -80,7 +80,7 @@ public class EventBusConfig {
     }
 
     @Bean("deadMessageQueue")
-    public Queue deadMessageQueue(@Qualifier("maiRabbitAdmin") RabbitAdmin rabbitAdmin) {
+    public Queue deadMessageQueue(@Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin) {
         Queue queue = QueueBuilder
                 .durable("dead-events")
                 .build();
@@ -89,7 +89,7 @@ public class EventBusConfig {
     }
 
     @Bean
-    public Binding bindingDeadMessageQueue(@Qualifier("maiRabbitAdmin") RabbitAdmin rabbitAdmin, @Qualifier("deadMessageQueue") Queue queue, @Qualifier("eventBusHeadersExchange") HeadersExchange exchange) {
+    public Binding bindingDeadMessageQueue(@Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin, @Qualifier("deadMessageQueue") Queue queue, @Qualifier("eventBusHeadersExchange") HeadersExchange exchange) {
         Binding binding = BindingBuilder.bind(queue).to(exchange).whereAny(RabbitClient.KEY_EVENT_TYPE).exist();
 
         binding.setAdminsThatShouldDeclare(rabbitAdmin);

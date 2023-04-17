@@ -1,6 +1,8 @@
 package io.github.soupedog.config.rabbitmq.consumer;
 
 import io.github.soupedog.config.rabbitmq.EventBusConfig;
+import io.github.soupedog.config.rabbitmq.configuration.RabbitMqConfigurationProperties;
+import io.github.soupedog.listener.HyggeBatchListener;
 import io.github.soupedog.listener.HyggeEventAListener;
 import io.github.soupedog.listener.HyggeEventBListener;
 import io.github.soupedog.listener.HyggeEventCListener;
@@ -24,10 +26,15 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class ConsumerConfig {
+    private final RabbitMqConfigurationProperties properties;
+
+    public ConsumerConfig(RabbitMqConfigurationProperties properties) {
+        this.properties = properties;
+    }
 
     @Bean("mainTopicMessageListenerContainer")
     public SimpleMessageListenerContainer mainTopicMessageListenerContainer(@Qualifier("mainRabbitmqConnectionFactory") CachingConnectionFactory mainRabbitmqConnectionFactory,
-                                                                            @Qualifier("maiRabbitAdmin") RabbitAdmin rabbitAdmin,
+                                                                            @Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin,
                                                                             @Autowired HyggeMainListener listener,
                                                                             @Qualifier("mainTopicQueue") Queue queue) {
         SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
@@ -42,6 +49,25 @@ public class ConsumerConfig {
         return container;
     }
 
+    @Bean("batchTopicMessageListenerContainer")
+    public SimpleMessageListenerContainer batchTopicMessageListenerContainer(@Qualifier("mainRabbitmqConnectionFactory") CachingConnectionFactory mainRabbitmqConnectionFactory,
+                                                                             @Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin,
+                                                                             @Autowired HyggeBatchListener listener,
+                                                                             @Qualifier("batchTopicQueue") Queue queue) {
+        SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
+        container.setConnectionFactory(mainRabbitmqConnectionFactory);
+        container.setAmqpAdmin(rabbitAdmin);
+        container.setQueues(queue);
+        container.setAcknowledgeMode(AcknowledgeMode.MANUAL);
+        container.setMessageListener(listener);
+        container.setConsumerBatchEnabled(true);
+        container.setBatchSize(properties.getBatch().getBatchSize());
+        container.setPrefetchCount(properties.getBatch().getBatchSize());
+        container.setConcurrentConsumers(2);
+        container.setMaxConcurrentConsumers(2);
+        return container;
+    }
+
     /**
      * Queue 创建过程见 {@link EventBusConfig#deadEventBusHeadersExchange(RabbitAdmin, HeadersExchange, ConfigurableBeanFactory)}
      * <p>
@@ -49,7 +75,7 @@ public class ConsumerConfig {
      */
     @Bean("eventAMessageListenerContainer")
     public SimpleMessageListenerContainer eventAMessageListenerContainer(@Qualifier("mainRabbitmqConnectionFactory") CachingConnectionFactory mainRabbitmqConnectionFactory,
-                                                                         @Qualifier("maiRabbitAdmin") RabbitAdmin rabbitAdmin,
+                                                                         @Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin,
                                                                          @Autowired HyggeEventAListener listener,
                                                                          @Qualifier("event-A") Queue queue) {
         SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
@@ -72,7 +98,7 @@ public class ConsumerConfig {
      */
     @Bean("eventBMessageListenerContainer")
     public SimpleMessageListenerContainer eventBMessageListenerContainer(@Qualifier("mainRabbitmqConnectionFactory") CachingConnectionFactory mainRabbitmqConnectionFactory,
-                                                                         @Qualifier("maiRabbitAdmin") RabbitAdmin rabbitAdmin,
+                                                                         @Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin,
                                                                          @Autowired HyggeEventBListener listener,
                                                                          @Qualifier("event-B") Queue queue) {
         SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
@@ -95,7 +121,7 @@ public class ConsumerConfig {
      */
     @Bean("eventCMessageListenerContainer")
     public SimpleMessageListenerContainer eventCMessageListenerContainer(@Qualifier("mainRabbitmqConnectionFactory") CachingConnectionFactory mainRabbitmqConnectionFactory,
-                                                                         @Qualifier("maiRabbitAdmin") RabbitAdmin rabbitAdmin,
+                                                                         @Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin,
                                                                          @Autowired HyggeEventCListener listener,
                                                                          @Qualifier("event-C") Queue queue) {
         SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();

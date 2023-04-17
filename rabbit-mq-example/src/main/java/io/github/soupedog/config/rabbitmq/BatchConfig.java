@@ -13,41 +13,40 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * @author Xavier
- * @date 2023/4/14
+ * @date 2023/4/17
  * @since 1.0
  */
 @Configuration
-public class MainConfig {
+public class BatchConfig {
     private final RabbitMqConfigurationProperties properties;
 
-    public MainConfig(RabbitMqConfigurationProperties properties) {
+    public BatchConfig(RabbitMqConfigurationProperties properties) {
         this.properties = properties;
     }
 
-    @Bean("mainTopicExchange")
-    public TopicExchange mainTopicExchange(@Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin) {
-        TopicExchange topicExchange = new TopicExchange(properties.getMain().getExchange() + ".topic");
+    @Bean("batchTopicExchange")
+    public TopicExchange batchTopicExchange(@Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin) {
+        TopicExchange topicExchange = new TopicExchange(properties.getBatch().getExchange() + ".topic");
         // true 是默认值
         topicExchange.setShouldDeclare(true);
         topicExchange.setAdminsThatShouldDeclare(rabbitAdmin);
         return topicExchange;
     }
 
-    @Bean("mainTopicQueue")
-    public Queue mainQueue(@Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin) {
+    @Bean("batchTopicQueue")
+    public Queue batchQueue(@Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin) {
         Queue queue = QueueBuilder
-                .durable(properties.getMain().getExchange() + ".topic")
+                .durable(properties.getBatch().getExchange() + ".topic")
                 .build();
         queue.setAdminsThatShouldDeclare(rabbitAdmin);
         return queue;
     }
 
     @Bean
-    public Binding bindingMainTopicQueue(@Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin, @Qualifier("mainTopicQueue") Queue queue, @Qualifier("mainTopicExchange") TopicExchange exchange) {
-        Binding binding = BindingBuilder.bind(queue).to(exchange).with(properties.getMain().getRoutingKey());
+    public Binding bindingBatchTopicQueue(@Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin, @Qualifier("batchTopicQueue") Queue queue, @Qualifier("batchTopicExchange") TopicExchange exchange) {
+        Binding binding = BindingBuilder.bind(queue).to(exchange).with(properties.getBatch().getRoutingKey());
 
         binding.setAdminsThatShouldDeclare(rabbitAdmin);
         return binding;
     }
-
 }
