@@ -9,7 +9,7 @@ public enum ActionEnum {
     /**
      * 重回队列相关状态
      */
-    NEEDS_REQUEUE, REQUEUE_SUCCESS, REQUEUE_UN_ACKED,
+    NEEDS_REQUEUE, REQUEUE_SUCCESS, REQUEUE_FAILURE,
     /**
      * 正常消费相关
      */

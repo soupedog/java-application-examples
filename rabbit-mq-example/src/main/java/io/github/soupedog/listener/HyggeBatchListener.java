@@ -1,13 +1,14 @@
 package io.github.soupedog.listener;
 
+import hygge.commons.exception.LightRuntimeException;
 import io.github.soupedog.domain.User;
+import io.github.soupedog.listener.base.ActionEnum;
 import io.github.soupedog.listener.base.HyggeBatchMessageItem;
 import io.github.soupedog.listener.base.HyggeChannelAwareBatchMessageListener;
 import io.github.soupedog.listener.base.HyggeRabbitMqBatchListenerContext;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -26,14 +27,23 @@ public class HyggeBatchListener extends HyggeChannelAwareBatchMessageListener<Us
         List<HyggeBatchMessageItem<User>> rawMessageList = context.getRawMessageList();
 
         for (HyggeBatchMessageItem<User> messageItem : rawMessageList) {
-            User user = jsonHelper.readAsObject(messageItem.getMessageStringVal(), User.class);
-            messageItem.setMessageEntity(user);
+            try {
+                User user = jsonHelper.readAsObject(messageItem.getMessageStringVal(), User.class);
+                messageItem.setMessageEntity(user);
+            } catch (Exception e) {
+                messageItem.setThrowable(e);
+                messageItem.setAction(ActionEnum.NEEDS_NACK);
+            }
         }
     }
 
     @Override
     public void onReceive(HyggeRabbitMqBatchListenerContext<User> context) {
-        ArrayList<Long> getDeliveryTagList = collectionHelper.filterNonemptyItemAsArrayList(false, context.getRawMessageList(), item -> item.getMessage().getMessageProperties().getDeliveryTag());
-        log.info("{}", getDeliveryTagList);
+        for (HyggeBatchMessageItem<User> item : context.getRawMessageList()) {
+//            if (randomHelper.getRandomInteger(0, 9) > 8) {
+//                item.setThrowable(new LightRuntimeException("模拟异常"));
+//                item.setAction(ActionEnum.NEEDS_NACK);
+//            }
+        }
     }
 }

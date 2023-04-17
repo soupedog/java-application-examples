@@ -58,7 +58,7 @@ public class RabbitClient extends HyggeWebUtilContainer {
                 headersStringVal,
                 ConstantParameters.LINE_SEPARATOR,
                 messageStringVal);
-        log.info(logInfo);
+//        log.info(logInfo);
     }
 
     public Message buildMessage(HyggeRabbitMessageEntity entity) {

@@ -1,18 +1,13 @@
 package io.github.soupedog.listener.base;
 
-import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import hygge.commons.constant.ConstantParameters;
-import hygge.commons.exception.InternalRuntimeException;
 import io.github.soupedog.listener.base.definition.HyggeListenerFeature;
 import org.springframework.amqp.core.Message;
-import org.springframework.amqp.core.MessageDeliveryMode;
-import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.listener.api.ChannelAwareMessageListener;
 import org.springframework.boot.logging.LogLevel;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 
 /**
  * @author Xavier
@@ -24,8 +19,8 @@ public abstract class HyggeChannelAwareMessageListener<T> implements HyggeListen
     protected String environmentName;
     protected long requeueToTailMillisecondInterval = 500L;
     protected int maxRequeueTimes = 1000;
-    protected static String HEADERS_KEY_ENVIRONMENT_NAME = "hygge-environment-name";
-    protected static String HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER = "hygge-requeue-counter";
+    protected static String HEADERS_KEY_ENVIRONMENT_NAME = DEFAULT_HEADERS_KEY_ENVIRONMENT_NAME;
+    protected static String HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER = DEFAULT_HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER;
 
     public HyggeChannelAwareMessageListener(String listenerName, String environmentName) {
         this.listenerName = listenerName;
@@ -143,36 +138,9 @@ public abstract class HyggeChannelAwareMessageListener<T> implements HyggeListen
             // 当前消息重新发送到队尾
             Channel channel = context.getChannel();
             Message message = context.getRwaMessage();
-            MessageProperties messageProperties = message.getMessageProperties();
+
             int requeueCounter = parameterHelper.integerFormatOfNullable(HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER, getValueFromHeaders(context, message, HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER, true), 0);
-
-            Map<String, Object> headers = messageProperties.getHeaders();
-
-            if (requeueCounter < maxRequeueTimes) {
-                headers.put(HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER, Integer.valueOf(requeueCounter + 1).toString());
-            } else {
-                throw new InternalRuntimeException("Exceeds the maximum(" + maxRequeueTimes + ") number of requeue-to-tail.");
-            }
-
-            AMQP.BasicProperties basicProperties = new AMQP.BasicProperties(messageProperties.getContentType(),
-                    messageProperties.getContentEncoding(),
-                    headers,
-                    messageProperties.getReceivedDeliveryMode() == null ? MessageDeliveryMode.toInt(MessageDeliveryMode.PERSISTENT) : MessageDeliveryMode.toInt(messageProperties.getReceivedDeliveryMode()),
-                    messageProperties.getPriority(),
-                    messageProperties.getCorrelationId(),
-                    messageProperties.getReplyTo(),
-                    messageProperties.getExpiration(),
-                    messageProperties.getMessageId(),
-                    messageProperties.getTimestamp(),
-                    messageProperties.getType(),
-                    messageProperties.getUserId(),
-                    messageProperties.getAppId(),
-                    messageProperties.getClusterId());
-
-            channel.basicPublish(message.getMessageProperties().getReceivedExchange(),
-                    message.getMessageProperties().getReceivedRoutingKey(),
-                    basicProperties,
-                    message.getBody());
+            requeueToTail(channel, message, HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER, requeueCounter, maxRequeueTimes);
         } catch (Exception e) {
             // 负反馈机制，防止加剧 ack/nack 不正常，不许重试
             context.setRetryable(false);

@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.sql.Timestamp;
 import java.time.Instant;
 
+import static io.github.soupedog.listener.base.definition.HyggeListenerBaseFeature.DEFAULT_HEADERS_KEY_ENVIRONMENT_NAME;
+
 /**
  * @author Xavier
  * @date 2023/4/14
@@ -69,6 +71,9 @@ public class MainController extends HyggeWebUtilContainer implements HyggeContro
 
             Message message = rabbitClient.buildMessage(current);
 
+            if (randomHelper.getRandomInteger(0, 9) > 8) {
+                message.getMessageProperties().getHeaders().put(DEFAULT_HEADERS_KEY_ENVIRONMENT_NAME, "sit");
+            }
             rabbitClient.sendMessageByExchangeAndRoutingKey(message, exchange, routingKey);
         }
 

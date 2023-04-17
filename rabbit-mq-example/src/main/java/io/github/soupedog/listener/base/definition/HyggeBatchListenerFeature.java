@@ -3,6 +3,7 @@ package io.github.soupedog.listener.base.definition;
 import io.github.soupedog.listener.base.ActionEnum;
 import io.github.soupedog.listener.base.HyggeBatchMessageItem;
 import io.github.soupedog.listener.base.HyggeRabbitMqBatchListenerContext;
+import org.springframework.boot.logging.LogLevel;
 
 import java.util.List;
 
@@ -72,7 +73,7 @@ public interface HyggeBatchListenerFeature<T> extends HyggeListenerBaseFeature, 
      * <p>
      * 警告：该方法本身不应该抛出异常，它可能被用于各种异常处理时的兜底环节
      */
-    void printMessageEntityLog(HyggeRabbitMqBatchListenerContext<T> context, String prefixInfo);
+    void printMessageEntityLog(LogLevel logLevel, List<HyggeBatchMessageItem<T>> messageList, String prefixInfo);
 
     /**
      * 收到消息后需要做的业务处理
@@ -94,7 +95,7 @@ public interface HyggeBatchListenerFeature<T> extends HyggeListenerBaseFeature, 
     /**
      * 业务处理结束时的一些扫尾工作，在自动 ack 执行完成后，将该步骤之前被标记了 {@link ActionEnum#ACK_SUCCESS} 或 {@link ActionEnum#NACK_SUCCESS} 的消息筛选出来进行业务扫尾处理工作
      */
-    default void businessLogicFinishHook(HyggeRabbitMqBatchListenerContext<T> context,List<HyggeBatchMessageItem<T>> needsBusinessLogicFinishList) {
+    default void businessLogicFinishHook(HyggeRabbitMqBatchListenerContext<T> context, List<HyggeBatchMessageItem<T>> needsBusinessLogicFinishList) {
         // do nothing by default
     }
 

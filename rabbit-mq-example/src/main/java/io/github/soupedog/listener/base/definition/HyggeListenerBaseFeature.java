@@ -5,6 +5,7 @@ import hygge.util.UtilCreator;
 import hygge.util.definition.CollectionHelper;
 import hygge.util.definition.JsonHelper;
 import hygge.util.definition.ParameterHelper;
+import hygge.util.definition.RandomHelper;
 import io.github.soupedog.listener.base.ActionEnum;
 import io.github.soupedog.listener.base.HyggeBatchMessageItem;
 import io.github.soupedog.listener.base.HyggeRabbitMqListenerContext;
@@ -26,6 +27,9 @@ public interface HyggeListenerBaseFeature {
     JsonHelper<?> jsonHelper = UtilCreator.INSTANCE.getDefaultJsonHelperInstance(false);
     ParameterHelper parameterHelper = UtilCreator.INSTANCE.getDefaultInstance(ParameterHelper.class);
     CollectionHelper collectionHelper = UtilCreator.INSTANCE.getDefaultInstance(CollectionHelper.class);
+    RandomHelper randomHelper = UtilCreator.INSTANCE.getDefaultInstance(RandomHelper.class);
+    String DEFAULT_HEADERS_KEY_ENVIRONMENT_NAME = "hygge-environment-name";
+    String DEFAULT_HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER = "hygge-requeue-counter";
 
     /**
      * 获取 Listener 名称(用于日志输出)

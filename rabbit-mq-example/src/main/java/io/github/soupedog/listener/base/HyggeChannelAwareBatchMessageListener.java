@@ -2,15 +2,18 @@ package io.github.soupedog.listener.base;
 
 import com.rabbitmq.client.Channel;
 import hygge.commons.constant.ConstantParameters;
+import hygge.commons.exception.InternalRuntimeException;
 import io.github.soupedog.listener.base.definition.HyggeBatchListenerFeature;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.listener.api.ChannelAwareBatchMessageListener;
+import org.springframework.boot.logging.LogLevel;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author Xavier
@@ -21,9 +24,9 @@ public abstract class HyggeChannelAwareBatchMessageListener<T> implements HyggeB
     protected String listenerName;
     protected String environmentName;
     protected long requeueToTailMillisecondInterval = 500L;
-    protected int maxRequeueTimes = 1000;
-    protected static String HEADERS_KEY_ENVIRONMENT_NAME = "hygge-environment-name";
-    protected static String HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER = "hygge-requeue-counter";
+    protected int maxRequeueTimes = 500;
+    protected static String HEADERS_KEY_ENVIRONMENT_NAME = DEFAULT_HEADERS_KEY_ENVIRONMENT_NAME;
+    protected static String HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER = DEFAULT_HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER;
 
     public HyggeChannelAwareBatchMessageListener(String listenerName, String environmentName) {
         this.listenerName = listenerName;
@@ -45,12 +48,7 @@ public abstract class HyggeChannelAwareBatchMessageListener<T> implements HyggeB
     }
 
     private void onMessageMainLogic(List<Message> messages, Channel channel, HyggeRabbitMqBatchListenerContext<T> context) {
-        ArrayList<HyggeBatchMessageItem<T>> rawMessageList = collectionHelper.filterNonemptyItemAsArrayList(false, messages,
-                item -> {
-                    // 更新当前最大 deliveryTag
-                    context.setMaxDeliveryTagIntelligently(item.getMessageProperties().getDeliveryTag());
-                    return new HyggeBatchMessageItem<>(item);
-                });
+        ArrayList<HyggeBatchMessageItem<T>> rawMessageList = collectionHelper.filterNonemptyItemAsArrayList(false, messages, HyggeBatchMessageItem::new);
         context.setRawMessageList(rawMessageList);
         context.setChannel(channel);
 
@@ -68,6 +66,9 @@ public abstract class HyggeChannelAwareBatchMessageListener<T> implements HyggeB
         }
 
         for (HyggeBatchMessageItem<T> item : context.getRawMessageList()) {
+            // 更新当前最大 deliveryTag
+            context.setMaxDeliveryTagIntelligently(item.getMessage().getMessageProperties().getDeliveryTag());
+
             String headersStringVal = formatMessageHeadersAsString(context, item);
             String messageStringVal = formatMessageBodyAsString(context, item);
             item.setHeadersStringVal(headersStringVal);
@@ -122,7 +123,7 @@ public abstract class HyggeChannelAwareBatchMessageListener<T> implements HyggeB
         }
 
         String prefixInfo = String.format("HyggeBatchListener(%s) received message.", getListenerName());
-        printMessageEntityLog(context, prefixInfo);
+        printMessageEntityLog(context.getLoglevel(), context.getRawMessageList(), prefixInfo);
     }
 
     @Override
@@ -145,14 +146,87 @@ public abstract class HyggeChannelAwareBatchMessageListener<T> implements HyggeB
         List<HyggeBatchMessageItem<T>> needsRequeueMessageList = new ArrayList<>();
 
         for (HyggeBatchMessageItem<T> item : context.getRawMessageList()) {
-            if (item.getAction().equals(ActionEnum.NEEDS_RETRY)) {
+            if (item.getAction().equals(ActionEnum.NEEDS_REQUEUE)) {
                 needsRequeueMessageList.add(item);
             } else {
                 nextRawMessageList.add(item);
             }
         }
 
-        // TODO needsRequeueMessageList 单条回队列
+        // 当前消息重新发送到队尾
+        Channel channel = context.getChannel();
+
+        CompletableFuture<?>[] futureArray = new CompletableFuture[needsRequeueMessageList.size()];
+
+        for (int i = 0; i < needsRequeueMessageList.size(); i++) {
+            HyggeBatchMessageItem<T> item = needsRequeueMessageList.get(i);
+
+            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                try {
+                    ack(context, item);
+
+                    // 防止重新投递过于迅速
+                    Thread.sleep(requeueToTailMillisecondInterval);
+
+                    Message message = item.getMessage();
+
+                    int requeueCounter = parameterHelper.integerFormatOfNullable(HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER, getValueFromHeaders(item, HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER, true), 0);
+
+                    requeueToTail(channel, message, HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER, requeueCounter, maxRequeueTimes);
+                    item.setAction(ActionEnum.REQUEUE_SUCCESS);
+                } catch (Exception e) {
+                    item.setAction(ActionEnum.REQUEUE_FAILURE);
+                    item.setThrowable(e);
+                    if (e instanceof InternalRuntimeException) {
+                        // 其实是超出 requeue 次数上限异常，不需要异常堆栈信息
+                        item.setThrowable(null);
+                        item.setAction(ActionEnum.REQUEUE_FAILURE);
+                        context.setLoglevelIntelligently(LogLevel.WARN);
+                    } else {
+                        context.setLoglevelIntelligently(LogLevel.ERROR);
+                    }
+                }
+            });
+
+            futureArray[i] = future;
+        }
+
+        String prefixInfo = null;
+        try {
+            CompletableFuture.allOf(futureArray).get();
+        } catch (Exception e) {
+            for (HyggeBatchMessageItem<T> item : needsRequeueMessageList) {
+                item.setThrowable(e);
+                prefixInfo = String.format("HyggeBatchListener(%s) fail to requeue.(The \"action\" value is no longer accurate)", getListenerName());
+                context.setLoglevelIntelligently(LogLevel.ERROR);
+            }
+        } finally {
+            switch (context.getLoglevel()) {
+                case WARN:
+                case ERROR:
+                case FATAL:
+                    if (prefixInfo == null) {
+                        prefixInfo = String.format("HyggeBatchListener(%s) some exception occurred during requeue.", getListenerName());
+                    }
+
+                    for (HyggeBatchMessageItem<T> item : context.getRawMessageList()) {
+                        String headersStringVal = formatMessageHeadersAsString(context, item);
+                        String messageStringVal = formatMessageBodyAsString(context, item);
+                        item.setHeadersStringVal(headersStringVal);
+                        item.setMessageStringVal(messageStringVal);
+
+                        // 日志对象覆写并输出
+                        item.setHeadersStringVal(messageHeadersOverwrite(context, item));
+                        item.setMessageStringVal(messageBodyOverwrite(context, item));
+                    }
+
+                    printMessageEntityLog(context.getLoglevel(), needsRequeueMessageList, prefixInfo);
+                    break;
+                default:
+                    // do nothing by default
+            }
+        }
+
         return nextRawMessageList;
     }
 
@@ -167,34 +241,42 @@ public abstract class HyggeChannelAwareBatchMessageListener<T> implements HyggeB
     }
 
     @Override
-    public void printMessageEntityLog(HyggeRabbitMqBatchListenerContext<T> context, String prefixInfo) {
+    public void printMessageEntityLog(LogLevel logLevel, List<HyggeBatchMessageItem<T>> messageList, String prefixInfo) {
         StringBuilder stringBuilder = new StringBuilder(prefixInfo);
         stringBuilder.append(ConstantParameters.LINE_SEPARATOR);
 
-        List<HyggeBatchMessageItem<T>> rawMessageList = context.getRawMessageList();
+        HashMap<Throwable, String> exceptionMap = null;
 
-        for (HyggeBatchMessageItem<T> item : rawMessageList) {
+        for (HyggeBatchMessageItem<T> item : messageList) {
             stringBuilder.append("action:").append(item.getAction());
             stringBuilder.append(" ");
             stringBuilder.append("headers:").append(item.getHeadersStringVal());
             stringBuilder.append(" ");
             stringBuilder.append("body:").append(item.getMessageStringVal());
-            stringBuilder.append(ConstantParameters.LINE_SEPARATOR);
 
             if (item.isExceptionOccurred()) {
-                String exceptionId = UUID.randomUUID().toString();
+                stringBuilder.append(" ");
+                if (exceptionMap == null) {
+                    exceptionMap = new HashMap<>(messageList.size() * 2);
+                }
+
+                String exceptionId = exceptionMap.get(item.getThrowable());
+                if (exceptionId == null) {
+                    exceptionId = UUID.randomUUID().toString();
+                    exceptionMap.put(item.getThrowable(), exceptionId);
+                    String innerExceptionPrefixInfo = String.format("HyggeBatchListener(%s) InnerException(%s).", getListenerName(), exceptionId);
+                    log.error(innerExceptionPrefixInfo, item.getThrowable());
+                }
 
                 stringBuilder.append("exception:").append(exceptionId);
-                stringBuilder.append(ConstantParameters.LINE_SEPARATOR);
-
-                String innerExceptionPrefixInfo = String.format("HyggeBatchListener(%s) InnerException(%s).", getListenerName(), exceptionId);
-                log.error(innerExceptionPrefixInfo, item.getThrowable());
             }
+
+            stringBuilder.append(ConstantParameters.LINE_SEPARATOR);
         }
 
         String logInfo = parameterHelper.removeStringFormTail(stringBuilder, ConstantParameters.LINE_SEPARATOR, 1).toString();
 
-        printLog(context.getLoglevel(), logInfo);
+        printLog(logLevel, logInfo);
     }
 
     @Override
@@ -202,11 +284,10 @@ public abstract class HyggeChannelAwareBatchMessageListener<T> implements HyggeB
         // 如果全为同种 ack 类型，可以进行批量提交
         HyggeRabbitMqBatchListenerContext.MultipleAckInfo multipleAckInfo = context.analyzeMultipleAckInfo();
         if (multipleAckInfo.isMultipleAckEnable()) {
-
-            try {
-                context.getChannel().basicAck(context.getMaxDeliveryTag(),true);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            if (multipleAckInfo.getAction().equals(ActionEnum.NEEDS_ACK)) {
+                ackMultiple(context);
+            } else {
+                nackMultiple(context);
             }
         } else {
             for (HyggeBatchMessageItem<T> item : context.getRawMessageList()) {
