@@ -3,10 +3,9 @@ package io.github.soupedog.listener.base.definition;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import hygge.commons.exception.InternalRuntimeException;
-import io.github.soupedog.listener.base.ActionEnum;
-import io.github.soupedog.listener.base.HyggeBatchMessageItem;
+import io.github.soupedog.listener.base.StatusEnums;
+import io.github.soupedog.listener.base.HyggeRabbitMQMessageItem;
 import io.github.soupedog.listener.base.HyggeRabbitMqBatchListenerContext;
-import io.github.soupedog.listener.base.HyggeRabbitMqListenerContext;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.core.MessageProperties;
@@ -59,46 +58,15 @@ public interface HyggeListenerOperator {
     /**
      * 单条消息进行 ack
      */
-    default void ack(HyggeRabbitMqListenerContext<Message> context) throws Exception {
-        try {
-            long deliveryTag = context.getRwaMessage().getMessageProperties().getDeliveryTag();
-            context.getChannel().basicAck(deliveryTag, false);
-            context.setAutoAckTriggered(true);
-        } catch (Exception e) {
-            // 负反馈机制，防止加剧 ack/nack 不正常，不许重试
-            context.setRetryable(false);
-            throw e;
-        }
-    }
-
-    /**
-     * 单条消息进行 nack
-     */
-    default void nack(HyggeRabbitMqListenerContext<Message> context) throws Exception {
-        try {
-            // 丢弃
-            long deliveryTag = context.getRwaMessage().getMessageProperties().getDeliveryTag();
-            context.getChannel().basicNack(deliveryTag, false, false);
-            context.setAutoAckTriggered(true);
-        } catch (Exception e) {
-            // 负反馈机制，防止加剧 ack/nack 不正常，不许重试
-            context.setRetryable(false);
-            throw e;
-        }
-    }
-
-    /**
-     * 单条消息进行 ack
-     */
-    default void ack(HyggeRabbitMqBatchListenerContext<?> context, HyggeBatchMessageItem<?> messageItem) {
+    default void ack(HyggeRabbitMqListenerContextFeature context, HyggeRabbitMQMessageItem<?> messageItem) {
         try {
             Message message = messageItem.getMessage();
             long deliveryTag = message.getMessageProperties().getDeliveryTag();
             context.getChannel().basicAck(deliveryTag, false);
-            messageItem.setAction(ActionEnum.ACK_SUCCESS);
+            messageItem.setStatus(StatusEnums.ACK_SUCCESS);
         } catch (Exception e) {
-            messageItem.setAction(ActionEnum.ACK_UN_ACKED);
-            messageItem.setThrowable(e);
+            messageItem.setException(e);
+            messageItem.setStatus(StatusEnums.ACK_UN_ACKED);
             context.setLoglevelIntelligently(LogLevel.ERROR);
         } finally {
             messageItem.setAutoAckTriggered(true);
@@ -111,14 +79,14 @@ public interface HyggeListenerOperator {
     default void ackMultiple(HyggeRabbitMqBatchListenerContext<?> context) {
         try {
             context.getChannel().basicAck(context.getMaxDeliveryTag(), true);
-            for (HyggeBatchMessageItem<?> item : context.getRawMessageList()) {
-                item.setAction(ActionEnum.ACK_SUCCESS);
+            for (HyggeRabbitMQMessageItem<?> item : context.getRawMessageList()) {
+                item.setStatus(StatusEnums.ACK_SUCCESS);
                 item.setAutoAckTriggered(true);
             }
         } catch (Exception e) {
-            for (HyggeBatchMessageItem<?> item : context.getRawMessageList()) {
-                item.setAction(ActionEnum.ACK_UN_ACKED);
-                item.setThrowable(e);
+            for (HyggeRabbitMQMessageItem<?> item : context.getRawMessageList()) {
+                item.setStatus(StatusEnums.ACK_UN_ACKED);
+                item.setException(e);
             }
             context.setLoglevelIntelligently(LogLevel.ERROR);
         }
@@ -127,16 +95,16 @@ public interface HyggeListenerOperator {
     /**
      * 单条消息进行 nack
      */
-    default void nack(HyggeRabbitMqBatchListenerContext<?> context, HyggeBatchMessageItem<?> messageItem) {
+    default void nack(HyggeRabbitMqListenerContextFeature context, HyggeRabbitMQMessageItem<?> messageItem) {
         try {
             Message message = messageItem.getMessage();
             long deliveryTag = message.getMessageProperties().getDeliveryTag();
             // 丢弃消息
             context.getChannel().basicNack(deliveryTag, false, false);
-            messageItem.setAction(ActionEnum.NACK_SUCCESS);
+            messageItem.setStatus(StatusEnums.NACK_SUCCESS);
         } catch (Exception e) {
-            messageItem.setAction(ActionEnum.NACK_UN_ACKED);
-            messageItem.setThrowable(e);
+            messageItem.setException(e);
+            messageItem.setStatus(StatusEnums.NACK_UN_ACKED);
             context.setLoglevelIntelligently(LogLevel.ERROR);
         } finally {
             messageItem.setAutoAckTriggered(true);
@@ -150,15 +118,15 @@ public interface HyggeListenerOperator {
         try {
             // 丢弃消息
             context.getChannel().basicNack(context.getMaxDeliveryTag(), true, false);
-            for (HyggeBatchMessageItem<?> item : context.getRawMessageList()) {
-                item.setAction(ActionEnum.NACK_SUCCESS);
+            for (HyggeRabbitMQMessageItem<?> item : context.getRawMessageList()) {
+                item.setStatus(StatusEnums.NACK_SUCCESS);
                 item.setAutoAckTriggered(true);
             }
-            context.setLoglevelIntelligently(LogLevel.WARN);
+            context.setLoglevelIntelligently(LogLevel.ERROR);
         } catch (Exception e) {
-            for (HyggeBatchMessageItem<?> item : context.getRawMessageList()) {
-                item.setAction(ActionEnum.NACK_UN_ACKED);
-                item.setThrowable(e);
+            for (HyggeRabbitMQMessageItem<?> item : context.getRawMessageList()) {
+                item.setStatus(StatusEnums.NACK_UN_ACKED);
+                item.setException(e);
             }
             context.setLoglevelIntelligently(LogLevel.ERROR);
         }

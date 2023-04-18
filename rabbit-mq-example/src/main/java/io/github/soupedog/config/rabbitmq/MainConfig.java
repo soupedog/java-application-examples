@@ -1,6 +1,7 @@
 package io.github.soupedog.config.rabbitmq;
 
 import io.github.soupedog.config.rabbitmq.configuration.RabbitMqConfigurationProperties;
+import io.github.soupedog.service.client.RabbitMqDelayMessageRetryClient;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Queue;
@@ -18,10 +19,13 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class MainConfig {
+    private RabbitMqDelayMessageRetryClient.Configuration DEFAULT_CONFIG = new RabbitMqDelayMessageRetryClient.Configuration();
     private final RabbitMqConfigurationProperties properties;
+    private final RabbitMqDelayMessageRetryClient retryClient;
 
-    public MainConfig(RabbitMqConfigurationProperties properties) {
+    public MainConfig(RabbitMqConfigurationProperties properties, RabbitMqDelayMessageRetryClient retryClient) {
         this.properties = properties;
+        this.retryClient = retryClient;
     }
 
     @Bean("mainTopicExchange")
@@ -47,7 +51,8 @@ public class MainConfig {
         Binding binding = BindingBuilder.bind(queue).to(exchange).with(properties.getMain().getRoutingKey());
 
         binding.setAdminsThatShouldDeclare(rabbitAdmin);
+
+        retryClient.initDelayResource(queue.getName(), exchange.getName(), binding.getRoutingKey(), DEFAULT_CONFIG);
         return binding;
     }
-
 }

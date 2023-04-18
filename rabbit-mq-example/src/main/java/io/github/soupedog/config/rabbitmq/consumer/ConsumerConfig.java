@@ -2,7 +2,7 @@ package io.github.soupedog.config.rabbitmq.consumer;
 
 import io.github.soupedog.config.rabbitmq.EventBusConfig;
 import io.github.soupedog.config.rabbitmq.configuration.RabbitMqConfigurationProperties;
-import io.github.soupedog.listener.HyggeBatchListener;
+import io.github.soupedog.listener.HyggeListenerBatch;
 import io.github.soupedog.listener.HyggeEventAListener;
 import io.github.soupedog.listener.HyggeEventBListener;
 import io.github.soupedog.listener.HyggeEventCListener;
@@ -52,7 +52,7 @@ public class ConsumerConfig {
     @Bean("batchTopicMessageListenerContainer")
     public SimpleMessageListenerContainer batchTopicMessageListenerContainer(@Qualifier("mainRabbitmqConnectionFactory") CachingConnectionFactory mainRabbitmqConnectionFactory,
                                                                              @Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin,
-                                                                             @Autowired HyggeBatchListener listener,
+                                                                             @Autowired HyggeListenerBatch listener,
                                                                              @Qualifier("batchTopicQueue") Queue queue) {
         SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
         container.setConnectionFactory(mainRabbitmqConnectionFactory);

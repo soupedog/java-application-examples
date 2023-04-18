@@ -1,6 +1,8 @@
 package io.github.soupedog.listener.base.definition;
 
+import io.github.soupedog.listener.base.HyggeRabbitMQMessageItem;
 import io.github.soupedog.listener.base.HyggeRabbitMqListenerContext;
+import io.github.soupedog.listener.base.StatusEnums;
 import org.springframework.amqp.core.Message;
 
 import java.util.Map;
@@ -13,93 +15,89 @@ import java.util.Map;
 public interface HyggeListenerFeature<T> extends HyggeListenerBaseFeature, HyggeListenerOperator {
 
     /**
-     * 是否要将当前消息发送回原队列
-     * <p>
-     * 常用于标记接收的消息不属于当前实例，不应进行消费并尝试将当前消息恢复到等效于被消费前的状态
+     * 为目标消息标记 {@link StatusEnums#NEEDS_REQUEUE} 状态，该方法返回 {@link Boolean#TRUE} 代表需要触发 {@link HyggeListenerFeature#requeue(HyggeRabbitMqListenerContext)} 方法
      */
-    default boolean isRequeueEnable(HyggeRabbitMqListenerContext<Message> context) throws Exception {
+    default boolean isRequeueEnable(HyggeRabbitMqListenerContext<T> context) throws Exception {
         return false;
     }
 
     /**
-     * 如果 {@link HyggeListenerFeature#isRequeueEnable(HyggeRabbitMqListenerContext)} 为 true，则将当前消息恢复到等效于被消费前的状态
+     * 尝试将标记了 {@link StatusEnums#NEEDS_REQUEUE} 的消息恢复到等效于被消费前的状态
      * <p>
-     * 该方法默认实现的机制是先 ack 当前消息，再将当前消息丢回队尾，可能产生消息丢失
+     * 注意：默认实现存在消息丢失的风险
+     * <pre>
+     *     ① 先将当前消息进行 ACK
+     *     ② 检查重回队列次数是否超出上限
+     *     ③ 未超出重回队列次数上限则拷贝当前消息并发回原队列尾部
+     * </pre>
      */
-    void requeue(HyggeRabbitMqListenerContext<Message> context) throws Exception;
+    void requeue(HyggeRabbitMqListenerContext<T> context) throws Exception;
 
     /**
-     * 将队列消息 Headers 转化成字符串形式
+     * 将队列消息的 Headers 转化成字符串形式
      * <p>
      * 警告：该方法本身不应该抛出异常，它可能被用于各种异常处理时的兜底环节
      */
-    String formatMessageHeadersAsString(HyggeRabbitMqListenerContext<Message> context);
+    String formatHeadersAsString(HyggeRabbitMqListenerContext<T> context, Map<String, Object> headers);
 
     /**
      * 将队列消息转化成字符串形式
      * <p>
      * 警告：该方法本身不应该抛出异常，它可能被用于各种异常处理时的兜底环节
      */
-    String formatMessageBodyAsString(HyggeRabbitMqListenerContext<Message> context);
+    String formatBodyAsString(HyggeRabbitMqListenerContext<T> context, Message message);
 
     /**
      * 将队列消息字符串形式转化成对象
      */
-    T formatMessageAsEntity(HyggeRabbitMqListenerContext<Message> context, String messageStringVal) throws Exception;
+    T formatAsEntity(HyggeRabbitMqListenerContext<T> context) throws Exception;
 
     /**
-     * 消息 headers 覆写，用于日志脱敏
+     * 消息 headers 覆写，对 {@link HyggeRabbitMQMessageItem} 进行数据更新，常用于日志脱敏
      * <p>
      * 警告：该方法本身不应该抛出异常，它可能被用于各种异常处理时的兜底环节
      */
-    default String messageHeadersOverwrite(HyggeRabbitMqListenerContext<Message> context, String headersStringVal, Map<String, Object> headers) {
-        return headersStringVal;
+    default void messageHeadersOverwrite(HyggeRabbitMqListenerContext<T> context) {
+        // do nothing by default
     }
 
     /**
-     * 消息 body 覆写，用于日志脱敏
+     * 消息 body 覆写，对 {@link HyggeRabbitMQMessageItem} 进行数据更新，常用于日志脱敏用于日志脱敏
      * <p>
      * 警告：该方法本身不应该抛出异常，它可能被用于各种异常处理时的兜底环节
-     *
-     * @param messageEntity 转化成对象的
      */
-    default String messageBodyOverwrite(HyggeRabbitMqListenerContext<Message> context, String messageStringVal, T messageEntity) {
-        return messageStringVal;
+    default void messageBodyOverwrite(HyggeRabbitMqListenerContext<T> context) {
+        // do nothing by default
     }
 
     /**
-     * 打印接收到的消息信息
+     * 将消息信息输出到日志系统
      * <p>
      * 警告：该方法本身不应该抛出异常，它可能被用于各种异常处理时的兜底环节
      */
-    void printMessageEntityLog(HyggeRabbitMqListenerContext<Message> context, String prefixInfo, String headersStringVal, String messageStringVal);
+    void printMessageEntityLog(HyggeRabbitMqListenerContext<T> context, String prefixInfo);
 
     /**
      * 收到消息后需要做的业务处理
      */
-    void onReceive(HyggeRabbitMqListenerContext<Message> context, T messageEntity) throws Exception;
+    void onReceive(HyggeRabbitMqListenerContext<T> context, T messageEntity) throws Exception;
 
     /**
-     * 根据 {@link HyggeRabbitMqListenerContext#isAutoAckTriggered()} 属性，如果为 true 则自动进行下列 ACK 操作之一：成功消费、消费失败丢弃
+     * 对 {@link HyggeRabbitMQMessageItem#isAutoAckTriggered()} 为 {@link Boolean#FALSE} 的消息自动进行消费确认
      */
-    void autoAck(HyggeRabbitMqListenerContext<Message> context, String headersStringVal, String messageStringVal);
+    void autoAck(HyggeRabbitMqListenerContext<T> context);
 
     /**
-     * 尝试重试行为，返回是否确实执行了重试逻辑
+     * 若当前消息被标记为 {@link StatusEnums#NEEDS_RETRY}，尝试进行消息的重试
      */
-    default boolean retryHook(HyggeRabbitMqListenerContext<Message> context) throws Exception {
-        return false;
+    default void retryHook(HyggeRabbitMqListenerContext<T> context) throws Exception {
+        // do nothing by default
     }
 
     /**
-     * 业务处理结束时的一些扫尾工作，在自动 ack 执行完成且未执行重试逻辑时触发
-     * <p>
-     * 下列情况该钩子函数不会被执行：<br/>
-     * ① 触发过 requeue 行为
-     * ② ack / nack 失败
-     * ③ {@link HyggeRabbitMqListenerContext#isBusinessLogicFinishEnable()} 为 false
+     * 消费完成后的业务扫尾处理，仅 {@link StatusEnums#ACK_SUCCESS} 或者 {@link StatusEnums#NACK_SUCCESS} 状态的消息会触发该方法
      */
-    default void businessLogicFinishHook(HyggeRabbitMqListenerContext<Message> context) throws Exception {
+    default void businessLogicFinishHook(HyggeRabbitMqListenerContext<T> context) throws Exception {
         // do nothing by default
     }
 
@@ -108,7 +106,7 @@ public interface HyggeListenerFeature<T> extends HyggeListenerBaseFeature, Hygge
      * <p>
      * 警告：该方法本身不应该抛出异常，它可能被用于各种异常处理时的兜底环节
      */
-    default void finallyHook(HyggeRabbitMqListenerContext<Message> context) {
+    default void finallyHook(HyggeRabbitMqListenerContext<T> context) {
         // do nothing by default
     }
 }

@@ -19,14 +19,14 @@ public class HyggeMainListener extends HyggeChannelAwareMessageListener<User> {
     }
 
     @Override
-    public User formatMessageAsEntity(HyggeRabbitMqListenerContext context, String messageStringVal) {
-        User user = jsonHelper.readAsObject(messageStringVal, User.class);
+    public User formatAsEntity(HyggeRabbitMqListenerContext<User> context) {
+        User user = jsonHelper.readAsObject(context.getRwaMessage().getMessageStringVal(), User.class);
         MDC.put("traceId", user.getUid());
         return user;
     }
 
     @Override
-    public void onReceive(HyggeRabbitMqListenerContext context, User messageEntity) {
+    public void onReceive(HyggeRabbitMqListenerContext<User> context, User messageEntity) {
         if (messageEntity.getAge() < 18) {
             // ack 超时时会重新进入队里并消费(默认是半小时，https://www.rabbitmq.com/consumers.html#acknowledgement-timeout)
             // 超时日志样例：Shutdown Signal: channel error; protocol method: #method<channel.close>(reply-code=406, reply-text=PRECONDITION_FAILED - delivery acknowledgement on channel 1 timed out. Timeout value used: 1800000 ms. This timeout value can be configured, see consumers doc guide to learn more, class-id=0, method-id=0)
@@ -35,7 +35,7 @@ public class HyggeMainListener extends HyggeChannelAwareMessageListener<User> {
     }
 
     @Override
-    public void finallyHook(HyggeRabbitMqListenerContext context) {
+    public void finallyHook(HyggeRabbitMqListenerContext<User> context) {
         try {
             MDC.remove("traceId");
         } catch (Exception e) {

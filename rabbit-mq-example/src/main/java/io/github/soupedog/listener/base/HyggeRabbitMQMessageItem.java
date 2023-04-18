@@ -7,19 +7,19 @@ import org.springframework.amqp.core.Message;
  * @date 2023/4/17
  * @since 1.0
  */
-public class HyggeBatchMessageItem<T> {
+public class HyggeRabbitMQMessageItem<T> {
     private Message message;
     private String headersStringVal;
     private String messageStringVal;
     private T messageEntity;
-    private ActionEnum action = ActionEnum.NEEDS_ACK;
     private boolean autoAckTriggered;
-    private Throwable throwable;
+    private StatusEnums status = StatusEnums.NEEDS_ACK;
+    private Exception exception;
 
-    private HyggeBatchMessageItem() {
+    private HyggeRabbitMQMessageItem() {
     }
 
-    public HyggeBatchMessageItem(Message message) {
+    public HyggeRabbitMQMessageItem(Message message) {
         this.message = message;
     }
 
@@ -55,14 +55,6 @@ public class HyggeBatchMessageItem<T> {
         this.messageEntity = messageEntity;
     }
 
-    public ActionEnum getAction() {
-        return action;
-    }
-
-    public void setAction(ActionEnum action) {
-        this.action = action;
-    }
-
     public boolean isAutoAckTriggered() {
         return autoAckTriggered;
     }
@@ -71,12 +63,20 @@ public class HyggeBatchMessageItem<T> {
         this.autoAckTriggered = autoAckTriggered;
     }
 
-    public Throwable getThrowable() {
-        return throwable;
+    public StatusEnums getStatus() {
+        return status;
     }
 
-    public void setThrowable(Throwable throwable) {
-        this.throwable = throwable;
+    public void setStatus(StatusEnums status) {
+        this.status = status;
+    }
+
+    public Exception getException() {
+        return exception;
+    }
+
+    public void setException(Exception exception) {
+        this.exception = exception;
     }
 
     public boolean isExceptionOccurred() {
@@ -84,6 +84,25 @@ public class HyggeBatchMessageItem<T> {
     }
 
     public boolean isNoExceptionOccurred() {
-        return throwable == null;
+        return exception == null;
+    }
+
+    /**
+     * 防止 NACK 状态分散各个 try-catch 中，仅需在 ack 阶段前调用该方法进行检测并赋值
+     */
+    public void nackStatusCheckAndReset() {
+        // 仅允许 NEEDS_NACK 状态发送异常后迁移到 NEEDS_NACK 状态
+        if (!isAutoAckTriggered() && statusExpected(StatusEnums.NEEDS_ACK) && isExceptionOccurred()) {
+            this.status = StatusEnums.NEEDS_NACK;
+        }
+    }
+
+    public boolean statusExpected(StatusEnums... statusEnums) {
+        for (StatusEnums action : statusEnums) {
+            if (action.equals(this.status)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

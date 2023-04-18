@@ -2,6 +2,7 @@ package io.github.soupedog.listener.base;
 
 import com.rabbitmq.client.Channel;
 import hygge.commons.template.container.base.AbstractHyggeContext;
+import io.github.soupedog.listener.base.definition.HyggeRabbitMqListenerContextFeature;
 import org.springframework.boot.logging.LogLevel;
 
 /**
@@ -9,85 +10,64 @@ import org.springframework.boot.logging.LogLevel;
  * @date 2023/4/14
  * @since 1.0
  */
-public class HyggeRabbitMqListenerContext<T> extends AbstractHyggeContext<String> {
+public class HyggeRabbitMqListenerContext<T> extends AbstractHyggeContext<String> implements HyggeRabbitMqListenerContextFeature {
     private long startTs = System.currentTimeMillis();
     private LogLevel loglevel = LogLevel.INFO;
-    private T rwaMessage;
     private Channel channel;
-    private boolean autoAckTriggered = false;
-    private boolean retryable = true;
-    private boolean businessLogicFinishEnable = false;
-    private Throwable throwable;
+    private HyggeRabbitMQMessageItem<T> rwaMessage;
 
+    @Override
     public long getStartTs() {
-        return startTs;
+        return this.startTs;
     }
 
+    @Override
     public void setStartTs(long startTs) {
         this.startTs = startTs;
     }
 
+    @Override
     public LogLevel getLoglevel() {
-        return loglevel;
+        return this.loglevel;
     }
 
+    @Override
+    public void setLoglevelIntelligently(LogLevel loglevel) {
+        if (loglevel.ordinal() > this.loglevel.ordinal()) {
+            this.loglevel = loglevel;
+        }
+    }
+
+    @Override
     public void setLoglevel(LogLevel loglevel) {
         this.loglevel = loglevel;
     }
 
-    public T getRwaMessage() {
-        return rwaMessage;
-    }
-
-    public void setRwaMessage(T rwaMessage) {
-        this.rwaMessage = rwaMessage;
-    }
-
+    @Override
     public Channel getChannel() {
-        return channel;
+        return this.channel;
     }
 
+    @Override
     public void setChannel(Channel channel) {
         this.channel = channel;
     }
 
-    public boolean isAutoAckTriggered() {
-        return autoAckTriggered;
-    }
-
-    public void setAutoAckTriggered(boolean autoAckTriggered) {
-        this.autoAckTriggered = autoAckTriggered;
-    }
-
-    public boolean isRetryable() {
-        return retryable;
-    }
-
-    public void setRetryable(boolean retryable) {
-        this.retryable = retryable;
-    }
-
-    public boolean isBusinessLogicFinishEnable() {
-        return businessLogicFinishEnable;
-    }
-
-    public void setBusinessLogicFinishEnable(boolean businessLogicFinishEnable) {
-        this.businessLogicFinishEnable = businessLogicFinishEnable;
-    }
-
+    @Override
     public boolean isExceptionOccurred() {
-        return !isNoExceptionOccurred();
+        return this.rwaMessage.isExceptionOccurred();
     }
 
+    @Override
     public boolean isNoExceptionOccurred() {
-        return throwable == null;
+        return this.rwaMessage.isNoExceptionOccurred();
     }
 
-    public Throwable getThrowable() {
-        return throwable;
+    public HyggeRabbitMQMessageItem<T> getRwaMessage() {
+        return rwaMessage;
     }
 
-    public void setThrowable(Throwable throwable) {
-        this.throwable = throwable;
+    public void setRwaMessage(HyggeRabbitMQMessageItem<T> rwaMessage) {
+        this.rwaMessage = rwaMessage;
     }
 }

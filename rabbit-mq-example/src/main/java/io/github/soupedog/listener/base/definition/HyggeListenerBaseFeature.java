@@ -6,9 +6,7 @@ import hygge.util.definition.CollectionHelper;
 import hygge.util.definition.JsonHelper;
 import hygge.util.definition.ParameterHelper;
 import hygge.util.definition.RandomHelper;
-import io.github.soupedog.listener.base.ActionEnum;
-import io.github.soupedog.listener.base.HyggeBatchMessageItem;
-import io.github.soupedog.listener.base.HyggeRabbitMqListenerContext;
+import io.github.soupedog.listener.base.HyggeRabbitMQMessageItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
@@ -36,22 +34,10 @@ public interface HyggeListenerBaseFeature {
      */
     String getListenerName();
 
-    default String getValueFromHeaders(HyggeRabbitMqListenerContext<?> context, Message message, String key, boolean nullable) {
-        String result = getValueFromHeaders(message, key);
-        if (!nullable && !StringUtils.hasText(result)) {
-            // 参数有误，无法自愈，所以设置不再允许重试
-            context.setRetryable(false);
-            throw new ParameterRuntimeException(getListenerName() + " fail to get [" + key + "] from headers of rabbitmq message, it can't be empty.");
-        }
-        return result;
-    }
-
-    default String getValueFromHeaders(HyggeBatchMessageItem<?> messageItem, String key, boolean nullable) {
+    default String getValueFromHeaders(HyggeRabbitMQMessageItem<?> messageItem, String key, boolean nullable) {
         String result = getValueFromHeaders(messageItem.getMessage(), key);
         if (!nullable && !StringUtils.hasText(result)) {
-            // 参数有误，无法自愈
-            messageItem.setAction(ActionEnum.NEEDS_NACK);
-            messageItem.setThrowable(new ParameterRuntimeException(getListenerName() + " fail to get [" + key + "] from headers of rabbitmq message, it can't be empty."));
+            messageItem.setException(new ParameterRuntimeException(getListenerName() + " fail to get [" + key + "] from headers of rabbitmq message, it can't be empty."));
         }
         return result;
     }
@@ -63,22 +49,22 @@ public interface HyggeListenerBaseFeature {
                 .orElse(null);
     }
 
-    default void printLog(LogLevel logLevel, String logInfo) {
+    default void printLog(LogLevel logLevel, String logInfo, Throwable throwable) {
         switch (logLevel) {
             case TRACE:
-                log.trace(logInfo);
+                log.trace(logInfo, throwable);
                 break;
             case DEBUG:
-                log.debug(logInfo);
+                log.debug(logInfo, throwable);
                 break;
             case INFO:
-                log.info(logInfo);
+                log.info(logInfo, throwable);
                 break;
             case WARN:
-                log.warn(logInfo);
+                log.warn(logInfo, throwable);
                 break;
             default:
-                log.error(logInfo);
+                log.error(logInfo, throwable);
                 break;
         }
     }

@@ -2,12 +2,14 @@ package io.github.soupedog.listener.base;
 
 import com.rabbitmq.client.Channel;
 import hygge.commons.constant.ConstantParameters;
+import hygge.commons.exception.InternalRuntimeException;
 import io.github.soupedog.listener.base.definition.HyggeListenerFeature;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.listener.api.ChannelAwareMessageListener;
 import org.springframework.boot.logging.LogLevel;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 /**
  * @author Xavier
@@ -34,7 +36,7 @@ public abstract class HyggeChannelAwareMessageListener<T> implements HyggeListen
 
     @Override
     public void onMessage(Message message, Channel channel) {
-        HyggeRabbitMqListenerContext<Message> context = new HyggeRabbitMqListenerContext<>();
+        HyggeRabbitMqListenerContext<T> context = new HyggeRabbitMqListenerContext<>();
         try {
             onMessageMainLogic(message, channel, context);
         } finally {
@@ -42,12 +44,14 @@ public abstract class HyggeChannelAwareMessageListener<T> implements HyggeListen
         }
     }
 
-    protected void onMessageMainLogic(Message message, Channel channel, HyggeRabbitMqListenerContext<Message> context) {
-        context.setRwaMessage(message);
+    protected void onMessageMainLogic(Message message, Channel channel, HyggeRabbitMqListenerContext<T> context) {
+        context.setRwaMessage(new HyggeRabbitMQMessageItem<T>(message));
         context.setChannel(channel);
 
-        String headersStringVal = null;
-        String messageStringVal = null;
+        String headersStringVal;
+        String messageStringVal;
+
+        HyggeRabbitMQMessageItem<T> messageItem = context.getRwaMessage();
 
         try {
             // 是否忽略当前消息，并丢回队列尾部
@@ -56,144 +60,172 @@ public abstract class HyggeChannelAwareMessageListener<T> implements HyggeListen
                 return;
             }
         } catch (Exception e) {
-            headersStringVal = formatMessageHeadersAsString(context);
-            messageStringVal = formatMessageBodyAsString(context);
+            messageItem.setException(e);
+            messageItem.setStatus(StatusEnums.REQUEUE_FAILURE);
+            context.setLoglevelIntelligently(LogLevel.ERROR);
+
+            headersStringVal = formatHeadersAsString(context, messageItem.getMessage().getMessageProperties().getHeaders());
+            messageStringVal = formatBodyAsString(context, messageItem.getMessage());
+            messageItem.setHeadersStringVal(headersStringVal);
+            messageItem.setMessageStringVal(messageStringVal);
 
             // 日志对象覆写
-            headersStringVal = messageHeadersOverwrite(context, headersStringVal, message.getMessageProperties().getHeaders());
-            messageStringVal = messageBodyOverwrite(context, messageStringVal, null);
+            messageHeadersOverwrite(context);
+            messageBodyOverwrite(context);
 
             String prefixInfo = String.format("HyggeListener(%s) fail to requeue, and this message turns into a unAcked message.", getListenerName());
-            context.setLoglevel(LogLevel.ERROR);
-            printMessageEntityLog(context, prefixInfo, headersStringVal, messageStringVal);
+            printMessageEntityLog(context, prefixInfo);
             return;
         }
 
         try {
-            headersStringVal = formatMessageHeadersAsString(context);
-            messageStringVal = formatMessageBodyAsString(context);
+            headersStringVal = formatHeadersAsString(context, messageItem.getMessage().getMessageProperties().getHeaders());
+            messageStringVal = formatBodyAsString(context, messageItem.getMessage());
+            messageItem.setHeadersStringVal(headersStringVal);
+            messageItem.setMessageStringVal(messageStringVal);
 
-            T messageEntity = formatMessageAsEntity(context, messageStringVal);
+            T messageEntity = formatAsEntity(context);
+            messageItem.setMessageEntity(messageEntity);
 
             // 日志对象覆写
-            headersStringVal = messageHeadersOverwrite(context, headersStringVal, message.getMessageProperties().getHeaders());
-            messageStringVal = messageBodyOverwrite(context, messageStringVal, messageEntity);
+            messageHeadersOverwrite(context);
+            messageBodyOverwrite(context);
 
             String prefixInfo = String.format("HyggeListener(%s) received message.", getListenerName());
-            printMessageEntityLog(context, prefixInfo, headersStringVal, messageStringVal);
+            printMessageEntityLog(context, prefixInfo);
 
             onReceive(context, messageEntity);
         } catch (Exception e) {
             // 将异常存入上下文
-            context.setThrowable(e);
-            context.setRetryable(false);
+            messageItem.setException(e);
         } finally {
             // 上下文中存在异常的统一会在此处处理
-            autoAck(context, headersStringVal, messageStringVal);
+            autoAck(context);
 
             try {
-                // 如果未抛出异常且未进行重试，则激活 businessLogicFinishHook 环节
-                if (context.isNoExceptionOccurred()) {
-                    context.setBusinessLogicFinishEnable(!retryHook(context));
+                if (context.isNoExceptionOccurred() && messageItem.statusExpected(StatusEnums.NEEDS_RETRY)) {
+                    retryHook(context);
                 }
             } catch (Exception e) {
-                String prefixInfo = String.format("HyggeListener(%s) fail to execute retryHook, and the finishHook method is automatically disabled.", getListenerName());
-                context.setLoglevel(LogLevel.ERROR);
-                printMessageEntityLog(context, prefixInfo, headersStringVal, messageStringVal);
-
                 // 将异常存入上下文
-                context.setThrowable(e);
+                messageItem.setException(e);
+
+                String prefixInfo = String.format("HyggeListener(%s) fail to execute retryHook, and the finishHook method is automatically disabled.", getListenerName());
+                context.setLoglevelIntelligently(LogLevel.ERROR);
+                printMessageEntityLog(context, prefixInfo);
             }
 
-            if (context.isBusinessLogicFinishEnable()) {
+            if (messageItem.statusExpected(StatusEnums.ACK_SUCCESS, StatusEnums.NACK_SUCCESS)) {
                 try {
                     businessLogicFinishHook(context);
                 } catch (Exception e) {
-                    String prefixInfo = String.format("HyggeListener(%s) fail to execute businessLogicFinishHook.", getListenerName());
-                    context.setLoglevel(LogLevel.ERROR);
-                    printMessageEntityLog(context, prefixInfo, headersStringVal, messageStringVal);
-
                     // 将异常存入上下文
-                    context.setThrowable(e);
+                    messageItem.setException(e);
+                    String prefixInfo = String.format("HyggeListener(%s) fail to execute businessLogicFinishHook.", getListenerName());
+                    context.setLoglevelIntelligently(LogLevel.ERROR);
+                    printMessageEntityLog(context, prefixInfo);
                 }
             }
         }
     }
 
     @Override
-    public boolean isRequeueEnable(HyggeRabbitMqListenerContext<Message> context) {
-        String messageEnvironmentName = getValueFromHeaders(context, context.getRwaMessage(), HEADERS_KEY_ENVIRONMENT_NAME, true);
+    public boolean isRequeueEnable(HyggeRabbitMqListenerContext<T> context) throws Exception {
+        HyggeRabbitMQMessageItem<T> messageItem = context.getRwaMessage();
 
-        return !environmentName.equals(messageEnvironmentName) && parameterHelper.isNotEmpty(messageEnvironmentName);
+        String messageEnvironmentName = getValueFromHeaders(messageItem, HEADERS_KEY_ENVIRONMENT_NAME, true);
+
+        if (!environmentName.equals(messageEnvironmentName) && parameterHelper.isNotEmpty(messageEnvironmentName)) {
+            messageItem.setStatus(StatusEnums.NEEDS_REQUEUE);
+        }
+        return false;
     }
 
     @Override
-    public void requeue(HyggeRabbitMqListenerContext<Message> context) throws Exception {
+    public void requeue(HyggeRabbitMqListenerContext<T> context) throws Exception {
+        HyggeRabbitMQMessageItem<T> messageItem = context.getRwaMessage();
         try {
-            ack(context);
+            ack(context, messageItem);
+
+            if (!messageItem.statusExpected(StatusEnums.ACK_SUCCESS)) {
+                throw messageItem.getException();
+            } else {
+                messageItem.setStatus(StatusEnums.REQUEUE_HALF_SUCCESS);
+            }
 
             // 防止重新投递过于迅速
             Thread.sleep(requeueToTailMillisecondInterval);
 
             // 当前消息重新发送到队尾
             Channel channel = context.getChannel();
-            Message message = context.getRwaMessage();
+            Message message = messageItem.getMessage();
 
-            int requeueCounter = parameterHelper.integerFormatOfNullable(HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER, getValueFromHeaders(context, message, HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER, true), 0);
+            int requeueCounter = parameterHelper.integerFormatOfNullable(HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER, getValueFromHeaders(messageItem, HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER, true), 0);
             requeueToTail(channel, message, HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER, requeueCounter, maxRequeueTimes);
+
+            messageItem.setStatus(StatusEnums.REQUEUE_SUCCESS);
         } catch (Exception e) {
-            // 负反馈机制，防止加剧 ack/nack 不正常，不许重试
-            context.setRetryable(false);
+            messageItem.setStatus(StatusEnums.REQUEUE_FAILURE);
             throw e;
         }
     }
 
     @Override
-    public String formatMessageHeadersAsString(HyggeRabbitMqListenerContext<Message> context) {
-        return jsonHelper.formatAsString(context.getRwaMessage().getMessageProperties().getHeaders());
+    public String formatHeadersAsString(HyggeRabbitMqListenerContext<T> context, Map<String, Object> headers) {
+        return jsonHelper.formatAsString(headers);
     }
 
     @Override
-    public String formatMessageBodyAsString(HyggeRabbitMqListenerContext<Message> context) {
-        return new String(context.getRwaMessage().getBody(), StandardCharsets.UTF_8);
+    public String formatBodyAsString(HyggeRabbitMqListenerContext<T> context, Message message) {
+        return new String(message.getBody(), StandardCharsets.UTF_8);
     }
 
     @Override
-    public void printMessageEntityLog(HyggeRabbitMqListenerContext<Message> context, String prefixInfo, String headersStringVal, String messageStringVal) {
+    public void printMessageEntityLog(HyggeRabbitMqListenerContext<T> context, String prefixInfo) {
+        HyggeRabbitMQMessageItem<T> messageItem = context.getRwaMessage();
+
         String logInfo = String.format("%s%sheaders:%s%sbody:%s",
                 prefixInfo,
                 ConstantParameters.LINE_SEPARATOR,
-                headersStringVal,
+                messageItem.getHeadersStringVal(),
                 ConstantParameters.LINE_SEPARATOR,
-                messageStringVal);
+                messageItem.getMessageStringVal());
 
-        printLog(context.getLoglevel(), logInfo);
+        printLog(context.getLoglevel(), logInfo, messageItem.getException());
     }
 
     @Override
-    public void autoAck(HyggeRabbitMqListenerContext<Message> context, String headersStringVal, String messageStringVal) {
+    public void autoAck(HyggeRabbitMqListenerContext<T> context) {
+        HyggeRabbitMQMessageItem<T> messageItem = context.getRwaMessage();
         try {
             // 自动 ack
-            if (!context.isAutoAckTriggered()) {
-                if (context.isNoExceptionOccurred()) {
-                    ack(context);
-                } else {
-                    nack(context);
+            if (!messageItem.isAutoAckTriggered()) {
+                messageItem.nackStatusCheckAndReset();
 
-                    String prefixInfo = String.format("HyggeListener(%s) fail to consume, and this message was discarded.", getListenerName());
-                    context.setLoglevel(LogLevel.ERROR);
-                    printMessageEntityLog(context, prefixInfo, headersStringVal, messageStringVal);
+                switch (messageItem.getStatus()) {
+                    case NEEDS_ACK:
+                        ack(context, messageItem);
+                        break;
+                    case NEEDS_NACK:
+                        nack(context, messageItem);
+                        break;
+                    default:
+                        throw new InternalRuntimeException("Status should be one of NEEDS_ACK/NEEDS_NACK but we found " + messageItem.getStatus() + ", and this message was unacked.");
                 }
             }
+
+            // 放外面是考虑到前面的步骤可能手动进行了 ack，兜底确保不是仅在自动 ack 触发时才输出日志
+            if (messageItem.isExceptionOccurred()) {
+                String prefixInfo = String.format("HyggeListener(%s) fail to consume, and this message was discarded.", getListenerName());
+                printMessageEntityLog(context, prefixInfo);
+            }
         } catch (Exception e) {
-            String ackInfo = context.isNoExceptionOccurred() ? "ack" : "nack";
-
-            String prefixInfo = String.format("HyggeListener(%s) fail to auto %s, and this message turns into a unAcked message.", getListenerName(), ackInfo);
-            context.setLoglevel(LogLevel.ERROR);
-            printMessageEntityLog(context, prefixInfo, headersStringVal, messageStringVal);
-
             // 将异常存入上下文
-            context.setThrowable(e);
+            messageItem.setException(e);
+
+            String prefixInfo = String.format("HyggeListener(%s) fail to auto ack, and this message turns into %s.", getListenerName(), messageItem.getStatus().toString());
+            context.setLoglevelIntelligently(LogLevel.ERROR);
+            printMessageEntityLog(context, prefixInfo);
         }
     }
 }
