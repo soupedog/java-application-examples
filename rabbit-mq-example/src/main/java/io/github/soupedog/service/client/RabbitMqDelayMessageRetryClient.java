@@ -1,13 +1,14 @@
 package io.github.soupedog.service.client;
 
 import hygge.web.template.HyggeWebUtilContainer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 
 import java.time.Duration;
 
@@ -19,21 +20,40 @@ import java.time.Duration;
  * @since 1.0
  */
 public class RabbitMqDelayMessageRetryClient extends HyggeWebUtilContainer {
+    private static final Logger log = LoggerFactory.getLogger(RabbitMqDelayMessageRetryClient.class);
+    protected String prefix = "hygge-retry-";
     private RabbitAdmin rabbitAdmin;
-    private ConfigurableBeanFactory factory;
+    /**
+     * 该值为空则会为每个需要重试机制的 queue 单独创建 exchange 进行延迟队列重试行为，以防止共享 exchange 引发广播机制而通知多个 queue
+     */
     private String staticRetryExchangeName;
 
-    public RabbitMqDelayMessageRetryClient(RabbitAdmin rabbitAdmin, ConfigurableBeanFactory factory) {
+    public RabbitMqDelayMessageRetryClient(RabbitAdmin rabbitAdmin) {
         this.rabbitAdmin = rabbitAdmin;
-        this.factory = factory;
     }
 
-    public String getDelayExchangeName(String rawExchange, String rawRoutingKey) {
+    public String getDelayExchangeName(String rawExchange, Configuration configuration) {
         if (parameterHelper.isNotEmpty(staticRetryExchangeName)) {
             return staticRetryExchangeName;
         }
 
-        return String.format("hygge-retry-%s-%s", rawExchange, rawRoutingKey);
+        return String.format(prefix + "%s", rawExchange);
+    }
+
+    public String getDelayExchangeName(Queue rawQueue, Configuration configuration) {
+        if (parameterHelper.isNotEmpty(staticRetryExchangeName)) {
+            return staticRetryExchangeName;
+        }
+
+        return String.format(prefix + "extra-%s", rawQueue.getName());
+    }
+
+    public String getDelayRoutingKey(String rawRoutingKey, Configuration configuration) {
+        return String.format(prefix + "%s-%s-%s", rawRoutingKey, configuration.getMaxRetryAsString(), configuration.getRetryInterval().toString());
+    }
+
+    public String getDelayRoutingKey(Queue rawQueue, Configuration configuration) {
+        return String.format(prefix + "extra-%s-%s-%s", rawQueue.getName(), configuration.getMaxRetryAsString(), configuration.getRetryInterval().toString());
     }
 
     public String getDelayQueueName(String rawQueueName, String rawExchange, String rawRoutingKey, Configuration configuration) {
@@ -41,14 +61,34 @@ public class RabbitMqDelayMessageRetryClient extends HyggeWebUtilContainer {
             return String.format("%s-%s-%s", rawQueueName, configuration.getMaxRetryAsString(), configuration.getRetryInterval().toString());
         }
 
-        return String.format("hygge-retry-%s-%s-%s-%s", rawExchange, rawRoutingKey, configuration.getMaxRetryAsString(), configuration.getRetryInterval().toString());
+        return String.format(prefix + "%s-%s-%s-%s", rawExchange, rawRoutingKey, configuration.getMaxRetryAsString(), configuration.getRetryInterval().toString());
+    }
+
+    protected String getDelayQueueName(Queue rawQueue, Configuration configuration) {
+        return String.format("%s-%s-%s", rawQueue.getName(), configuration.getMaxRetryAsString(), configuration.getRetryInterval().toString());
+    }
+
+    public String getDelayRoutingKeyToDelay(Queue rawQueue, Configuration configuration) {
+        return getDelayRoutingKey(rawQueue, configuration) + "1";
+    }
+
+    public String getDelayRoutingKeyToRaw(Queue rawQueue, Configuration configuration) {
+        return getDelayRoutingKey(rawQueue, configuration) + "2";
     }
 
     public void initDelayResource(String rawQueueName, String rawExchange, String rawRoutingKey, Configuration configuration) {
-        String queueName = getDelayQueueName(rawQueueName, rawExchange, rawRoutingKey, configuration);
+        String delayExchangeName = getDelayExchangeName(rawExchange, configuration);
+
+        TopicExchange delayExchange = new TopicExchange(delayExchangeName);
+        delayExchange.setAdminsThatShouldDeclare(rabbitAdmin);
+        rabbitAdmin.declareExchange(delayExchange);
+
+        String delayRoutingKey = getDelayRoutingKey(rawRoutingKey, configuration);
+
+        String delayQueueName = getDelayQueueName(rawQueueName, rawExchange, rawRoutingKey, configuration);
 
         Queue delayQueue = QueueBuilder
-                .durable(queueName)
+                .durable(delayQueueName)
                 .ttl(parameterHelper.integerFormat("ttl", configuration.getRetryInterval().toMillis()))
                 .deadLetterExchange(rawExchange)
                 .deadLetterRoutingKey(rawRoutingKey)
@@ -56,20 +96,66 @@ public class RabbitMqDelayMessageRetryClient extends HyggeWebUtilContainer {
         delayQueue.setAdminsThatShouldDeclare(rabbitAdmin);
 
         rabbitAdmin.declareQueue(delayQueue);
-        factory.registerSingleton(queueName, delayQueue);
 
-        String delayExchangeName = getDelayExchangeName(rawExchange, rawRoutingKey);
+        Binding binding = BindingBuilder.bind(delayQueue).to(delayExchange).with(delayRoutingKey);
+        binding.setAdminsThatShouldDeclare(rabbitAdmin);
+        rabbitAdmin.declareBinding(binding);
+
+        log.info("Init retry resource. exchange:{} routingKey:{} delayQueueName:{} ttl:{}", delayExchangeName, delayRoutingKey, delayQueueName, configuration.retryInterval.toString());
+    }
+
+    /**
+     * 需要重试的消息位于的队列是广播形式，需要构建一套细颗粒度的消息分发绑定
+     */
+    public void initDelayResource(Queue rawQueue, Configuration configuration) {
+        String delayExchangeName = getDelayExchangeName(rawQueue, configuration);
 
         TopicExchange delayExchange = new TopicExchange(delayExchangeName);
         delayExchange.setAdminsThatShouldDeclare(rabbitAdmin);
         rabbitAdmin.declareExchange(delayExchange);
-        factory.registerSingleton(delayExchangeName, delayExchange);
 
-        Binding binding = BindingBuilder.bind(delayQueue).to(delayExchange).with(rawRoutingKey);
-        binding.setAdminsThatShouldDeclare(rabbitAdmin);
-        rabbitAdmin.declareBinding(binding);
+        String delayRoutingKey = getDelayRoutingKeyToDelay(rawQueue, configuration);
+        String delayRoutingKeyToRaw = getDelayRoutingKeyToRaw(rawQueue, configuration);
 
-        factory.registerSingleton(delayExchangeName + "-to-" + delayQueue, binding);
+        String delayQueueName = getDelayQueueName(rawQueue, configuration);
+
+        Queue delayQueue = QueueBuilder
+                .durable(delayQueueName)
+                .ttl(parameterHelper.integerFormat("ttl", configuration.getRetryInterval().toMillis()))
+                .deadLetterExchange(delayExchangeName)
+                .deadLetterRoutingKey(delayRoutingKeyToRaw)
+                .build();
+        delayQueue.setAdminsThatShouldDeclare(rabbitAdmin);
+
+        rabbitAdmin.declareQueue(delayQueue);
+
+        // delayExchange → delayQueue
+        Binding binding1 = BindingBuilder.bind(delayQueue).to(delayExchange).with(delayRoutingKey);
+        binding1.setAdminsThatShouldDeclare(rabbitAdmin);
+        rabbitAdmin.declareBinding(binding1);
+
+        // delayExchange → rawQueue
+        Binding binding2 = BindingBuilder.bind(rawQueue).to(delayExchange).with(delayRoutingKeyToRaw);
+        binding2.setAdminsThatShouldDeclare(rabbitAdmin);
+        rabbitAdmin.declareBinding(binding2);
+
+        log.info("Init retry resource. exchange:{} routingKey:{} delayQueueName:{} ttl:{}", delayExchangeName, delayRoutingKey, delayQueueName, configuration.retryInterval.toString());
+    }
+
+    public RabbitAdmin getRabbitAdmin() {
+        return rabbitAdmin;
+    }
+
+    public void setRabbitAdmin(RabbitAdmin rabbitAdmin) {
+        this.rabbitAdmin = rabbitAdmin;
+    }
+
+    public String getStaticRetryExchangeName() {
+        return staticRetryExchangeName;
+    }
+
+    public void setStaticRetryExchangeName(String staticRetryExchangeName) {
+        this.staticRetryExchangeName = staticRetryExchangeName;
     }
 
     public static class Configuration {
@@ -84,7 +170,7 @@ public class RabbitMqDelayMessageRetryClient extends HyggeWebUtilContainer {
         /**
          * 最大存活时间(negative 则代表永久有效)
          */
-        private Duration ttl = Duration.ofMinutes(-1);
+        private Duration ttl = Duration.ofSeconds(-1);
 
         public String getMaxRetryAsString() {
             if (maxRetry <= 0) {
