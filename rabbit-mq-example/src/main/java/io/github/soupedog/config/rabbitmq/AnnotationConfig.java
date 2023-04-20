@@ -28,7 +28,7 @@ public class AnnotationConfig {
 
     @Bean("annotationTopicExchange")
     public TopicExchange annotationTopicExchange(@Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin) {
-        TopicExchange topicExchange = new TopicExchange(properties.getAnnotation().getExchange() + ".topic");
+        TopicExchange topicExchange = new TopicExchange(properties.getAnnotation().getExchange());
         topicExchange.setAdminsThatShouldDeclare(rabbitAdmin);
         return topicExchange;
     }
@@ -36,10 +36,10 @@ public class AnnotationConfig {
     @Bean("annotationTopicQueue")
     public Queue annotationTopicQueue(@Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin) {
         Queue queue = QueueBuilder
-                .durable(properties.getAnnotation().getExchange() + ".topic")
+                .durable(properties.getAnnotation().getExchange())
                 .ttl(properties.getAnnotation().getTtlMillisecond())
                 // 配置为死信形成循环
-                .deadLetterExchange(properties.getAnnotation().getDeadExchange() + ".topic")
+                .deadLetterExchange(properties.getAnnotation().getDeadExchange())
                 .deadLetterRoutingKey(properties.getAnnotation().getDeadRoutingKey())
                 .build();
         queue.setAdminsThatShouldDeclare(rabbitAdmin);
@@ -56,7 +56,7 @@ public class AnnotationConfig {
 
     @Bean("deadAnnotationTopicExchange")
     public TopicExchange deadAnnotationTopicExchange(@Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin) {
-        TopicExchange topicExchange = new TopicExchange(properties.getAnnotation().getDeadExchange() + ".topic");
+        TopicExchange topicExchange = new TopicExchange(properties.getAnnotation().getDeadExchange());
         topicExchange.setAdminsThatShouldDeclare(rabbitAdmin);
         return topicExchange;
     }
@@ -64,10 +64,10 @@ public class AnnotationConfig {
     @Bean("deadAnnotationTopicQueue")
     public Queue deadAnnotationTopicQueue(@Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin) {
         Queue queue = QueueBuilder
-                .durable(properties.getAnnotation().getDeadExchange() + ".topic")
+                .durable(properties.getAnnotation().getDeadExchange() )
                 .ttl(properties.getAnnotation().getDeadTtlMillisecond())
                 // 配置为正常形成循环
-                .deadLetterExchange(properties.getAnnotation().getExchange() + ".topic")
+                .deadLetterExchange(properties.getAnnotation().getExchange())
                 .deadLetterRoutingKey(properties.getAnnotation().getRoutingKey())
                 .build();
         queue.setAdminsThatShouldDeclare(rabbitAdmin);

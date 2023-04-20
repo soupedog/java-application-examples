@@ -42,7 +42,7 @@ public class MainController extends HyggeWebUtilContainer implements HyggeContro
     }
 
     @PostMapping("/main/topic/send")
-    public Object main(@RequestParam(name = "exchange", required = false, defaultValue = "${test.demo.rabbit.main.exchange}.topic") String exchange,
+    public Object main(@RequestParam(name = "exchange", required = false, defaultValue = "${test.demo.rabbit.main.exchange}") String exchange,
                        @RequestParam(name = "routingKey", required = false, defaultValue = "${test.demo.rabbit.main.routing-key}") String routingKey,
                        @RequestParam(name = "redoTimes", required = false, defaultValue = "1") int redoTimes,
                        @RequestBody User user) {
@@ -57,7 +57,7 @@ public class MainController extends HyggeWebUtilContainer implements HyggeContro
     }
 
     @PostMapping("/batch/topic/send")
-    public Object batch(@RequestParam(name = "exchange", required = false, defaultValue = "${test.demo.rabbit.batch.exchange}.topic") String exchange,
+    public Object batch(@RequestParam(name = "exchange", required = false, defaultValue = "${test.demo.rabbit.batch.exchange}") String exchange,
                         @RequestParam(name = "routingKey", required = false, defaultValue = "${test.demo.rabbit.batch.routing-key}") String routingKey,
                         @RequestParam(name = "redoTimes", required = false, defaultValue = "10") int redoTimes,
                         @RequestBody User user) {

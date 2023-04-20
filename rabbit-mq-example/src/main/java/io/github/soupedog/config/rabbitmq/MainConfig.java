@@ -19,7 +19,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class MainConfig {
-    private RabbitMqDelayMessageRetryClient.Configuration DEFAULT_CONFIG = new RabbitMqDelayMessageRetryClient.Configuration();
+    private final RabbitMqDelayMessageRetryClient.Configuration DEFAULT_CONFIG = new RabbitMqDelayMessageRetryClient.Configuration();
     private final RabbitMqConfigurationProperties properties;
     private final RabbitMqDelayMessageRetryClient retryClient;
 
@@ -30,7 +30,7 @@ public class MainConfig {
 
     @Bean("mainTopicExchange")
     public TopicExchange mainTopicExchange(@Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin) {
-        TopicExchange topicExchange = new TopicExchange(properties.getMain().getExchange() + ".topic");
+        TopicExchange topicExchange = new TopicExchange(properties.getMain().getExchange());
         // true 是默认值
         topicExchange.setShouldDeclare(true);
         topicExchange.setAdminsThatShouldDeclare(rabbitAdmin);
@@ -40,7 +40,7 @@ public class MainConfig {
     @Bean("mainTopicQueue")
     public Queue mainQueue(@Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin) {
         Queue queue = QueueBuilder
-                .durable(properties.getMain().getExchange() + ".topic")
+                .durable(properties.getMain().getExchange())
                 .build();
         queue.setAdminsThatShouldDeclare(rabbitAdmin);
         return queue;

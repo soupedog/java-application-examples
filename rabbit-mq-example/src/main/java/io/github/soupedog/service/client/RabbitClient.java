@@ -7,6 +7,7 @@ import hygge.web.template.HyggeWebUtilContainer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageBuilder;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +36,7 @@ public class RabbitClient extends HyggeWebUtilContainer {
     public void sendMessageByEvent(Message message, String eventType) {
         message.getMessageProperties().setHeader(KEY_EVENT_TYPE, eventType);
 
+        // 演示如何使用(但 cachingConnectionFactory 为 CachingConnectionFactory.ConfirmType.CORRELATED 模式时才真正生效)
         CorrelationData correlationData = new CorrelationData();
 
         rabbitTemplate.send(properties.getEventBus().getExchange(), "", message, correlationData);

@@ -27,7 +27,7 @@ public class AnnotationConsumerConfig extends HyggeWebUtilContainer {
     /**
      * {@link AnnotationConfig#annotationTopicQueue(RabbitAdmin)}
      */
-    @RabbitListener(queues = {"${test.demo.rabbit.annotation.exchange}.topic"})
+    @RabbitListener(queues = {"${test.demo.rabbit.annotation.exchange}"})
     public void annotationConsumer(Message message, Channel channel) {
         printMessage("normal", message);
 
@@ -44,7 +44,7 @@ public class AnnotationConsumerConfig extends HyggeWebUtilContainer {
     /**
      * {@link AnnotationConfig#deadAnnotationTopicQueue(RabbitAdmin)}
      */
-    @RabbitListener(queues = {"${test.demo.rabbit.annotation.dead-exchange}.topic"})
+    @RabbitListener(queues = {"${test.demo.rabbit.annotation.dead-exchange}"})
     public void deadAnnotationConsumer(Message message, Channel channel) {
         printMessage("dead", message);
 

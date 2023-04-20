@@ -19,8 +19,8 @@ public class HyggeMainListener extends HyggeChannelAwareMessageListener<User> {
     }
 
     @Override
-    public User formatAsEntity(HyggeRabbitMqListenerContext<User> context) {
-        User user = jsonHelper.readAsObject(context.getRwaMessage().getMessageStringVal(), User.class);
+    public User formatAsEntity(HyggeRabbitMqListenerContext<User> context, String messageStringVal) {
+        User user = jsonHelper.readAsObject(messageStringVal, User.class);
         MDC.put("traceId", user.getUid());
         return user;
     }

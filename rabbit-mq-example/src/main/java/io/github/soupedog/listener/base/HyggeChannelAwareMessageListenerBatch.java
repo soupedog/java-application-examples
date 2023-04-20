@@ -52,7 +52,7 @@ public abstract class HyggeChannelAwareMessageListenerBatch<T> implements HyggeL
         context.setRawMessageList(rawMessageList);
         context.setChannel(channel);
 
-        // 是否忽略当前消息，并丢回队列尾部
+        // 是否忽略当前消息，并需要尝试恢复到消费前等效的状态
         if (isRequeueEnable(context)) {
             List<HyggeRabbitMQMessageItem<T>> nextRawMessageList = requeue(context);
 
@@ -84,21 +84,6 @@ public abstract class HyggeChannelAwareMessageListenerBatch<T> implements HyggeL
         // 自动 ack 处理
         autoAck(context);
 
-        // 筛选出需要重试的消息
-        List<HyggeRabbitMQMessageItem<T>> needsRetryList = collectionHelper.filterNonemptyItemAsArrayList(false, context.getRawMessageList(),
-                messageItem -> {
-                    if (StatusEnums.NEEDS_RETRY.equals(messageItem.getStatus())) {
-                        return messageItem;
-                    } else {
-                        return null;
-                    }
-                }
-        );
-
-        if (!needsRetryList.isEmpty()) {
-            retryHook(context, needsRetryList);
-        }
-
         // 筛选出需要业务扫尾处理的消息
         List<HyggeRabbitMQMessageItem<T>> needsBusinessLogicFinishList = collectionHelper.filterNonemptyItemAsArrayList(false, context.getRawMessageList(),
                 messageItem -> {
@@ -116,13 +101,28 @@ public abstract class HyggeChannelAwareMessageListenerBatch<T> implements HyggeL
             businessLogicFinishHook(context, needsBusinessLogicFinishList);
         }
 
+        // 筛选出需要重试的消息
+        List<HyggeRabbitMQMessageItem<T>> needsRetryList = collectionHelper.filterNonemptyItemAsArrayList(false, context.getRawMessageList(),
+                messageItem -> {
+                    if (StatusEnums.NEEDS_RETRY.equals(messageItem.getStatus())) {
+                        return messageItem;
+                    } else {
+                        return null;
+                    }
+                }
+        );
+
+        if (!needsRetryList.isEmpty()) {
+            retryHook(context, needsRetryList);
+        }
+
         // 日志对象覆写并输出
         for (HyggeRabbitMQMessageItem<T> item : context.getRawMessageList()) {
             messageHeadersOverwrite(context, item);
             messageBodyOverwrite(context, item);
         }
 
-        String prefixInfo = String.format("HyggeBatchListener(%s) received message.", getListenerName());
+        String prefixInfo = String.format("HyggeBatchListener(%s): Received message.", getListenerName());
         printMessageEntityLog(context, context.getRawMessageList(), prefixInfo);
     }
 
@@ -182,13 +182,12 @@ public abstract class HyggeChannelAwareMessageListenerBatch<T> implements HyggeL
                     item.setStatus(StatusEnums.REQUEUE_SUCCESS);
                 } catch (Exception e) {
                     item.setStatus(StatusEnums.REQUEUE_FAILURE);
-                    item.setException(e);
+
                     if (e instanceof InternalRuntimeException) {
                         // 其实是超出 requeue 次数上限异常，不需要异常堆栈信息
-                        item.setException(null);
-                        item.setStatus(StatusEnums.REQUEUE_FAILURE);
                         context.setLoglevelIntelligently(LogLevel.WARN);
                     } else {
+                        item.setException(e);
                         context.setLoglevelIntelligently(LogLevel.ERROR);
                     }
                 }
@@ -203,7 +202,7 @@ public abstract class HyggeChannelAwareMessageListenerBatch<T> implements HyggeL
         } catch (Exception e) {
             for (HyggeRabbitMQMessageItem<T> item : needsRequeueMessageList) {
                 item.setException(e);
-                prefixInfo = String.format("HyggeBatchListener(%s) fail to requeue.(The \"action\" value is no longer accurate)", getListenerName());
+                prefixInfo = String.format("HyggeBatchListener(%s): Fail to requeue.(The \"status\" value is no longer accurate)", getListenerName());
                 context.setLoglevelIntelligently(LogLevel.ERROR);
             }
         } finally {
@@ -212,7 +211,7 @@ public abstract class HyggeChannelAwareMessageListenerBatch<T> implements HyggeL
                 case ERROR:
                 case FATAL:
                     if (prefixInfo == null) {
-                        prefixInfo = String.format("HyggeBatchListener(%s) some exception occurred during requeue.", getListenerName());
+                        prefixInfo = String.format("HyggeBatchListener(%s): Some exceptions occurred during requeue.", getListenerName());
                     }
 
                     List<HyggeRabbitMQMessageItem<T>> unexpectedItemList = collectionHelper.filterNonemptyItemAsArrayList(false, needsRequeueMessageList,
@@ -279,7 +278,7 @@ public abstract class HyggeChannelAwareMessageListenerBatch<T> implements HyggeL
                 if (exceptionId == null) {
                     exceptionId = UUID.randomUUID().toString();
                     exceptionMap.put(item.getException(), exceptionId);
-                    String innerExceptionPrefixInfo = String.format("HyggeBatchListener(%s) InnerException(%s).", getListenerName(), exceptionId);
+                    String innerExceptionPrefixInfo = String.format("HyggeBatchListener(%s): InnerException(%s).", getListenerName(), exceptionId);
                     log.error(innerExceptionPrefixInfo, item.getException());
                 }
 
@@ -321,7 +320,7 @@ public abstract class HyggeChannelAwareMessageListenerBatch<T> implements HyggeL
                         nack(context, item);
                         break;
                     default:
-                        item.setException(new InternalRuntimeException("Status should be one of NEEDS_ACK/NEEDS_NACK but we found " + item.getStatus() + ", and this message was unacked."));
+                        item.setException(new InternalRuntimeException("Status should be one of NEEDS_ACK/NEEDS_NACK but we found " + item.getStatus().toString() + "."));
                 }
             }
         }

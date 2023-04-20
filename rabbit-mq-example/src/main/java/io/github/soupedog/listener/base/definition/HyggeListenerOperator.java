@@ -66,8 +66,8 @@ public interface HyggeListenerOperator {
             messageItem.setStatus(StatusEnums.ACK_SUCCESS);
         } catch (Exception e) {
             messageItem.setException(e);
-            messageItem.setStatus(StatusEnums.ACK_UN_ACKED);
             context.setLoglevelIntelligently(LogLevel.ERROR);
+            messageItem.setStatus(StatusEnums.ACK_UN_ACKED);
         } finally {
             messageItem.setAutoAckTriggered(true);
         }

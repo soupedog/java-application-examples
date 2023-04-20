@@ -50,7 +50,7 @@ public interface HyggeListenerFeature<T> extends HyggeListenerBaseFeature, Hygge
     /**
      * 将队列消息字符串形式转化成对象
      */
-    T formatAsEntity(HyggeRabbitMqListenerContext<T> context) throws Exception;
+    T formatAsEntity(HyggeRabbitMqListenerContext<T> context, String messageStringVal) throws Exception;
 
     /**
      * 消息 headers 覆写，对 {@link HyggeRabbitMQMessageItem} 进行数据更新，常用于日志脱敏
@@ -88,16 +88,16 @@ public interface HyggeListenerFeature<T> extends HyggeListenerBaseFeature, Hygge
     void autoAck(HyggeRabbitMqListenerContext<T> context);
 
     /**
-     * 若当前消息被标记为 {@link StatusEnums#NEEDS_RETRY}，尝试进行消息的重试
+     * 消费完成后的业务扫尾处理，仅 {@link StatusEnums#ACK_SUCCESS} 或者 {@link StatusEnums#NACK_SUCCESS} 状态的消息会触发该方法
      */
-    default void retryHook(HyggeRabbitMqListenerContext<T> context) throws Exception {
+    default void businessLogicFinishHook(HyggeRabbitMqListenerContext<T> context) throws Exception {
         // do nothing by default
     }
 
     /**
-     * 消费完成后的业务扫尾处理，仅 {@link StatusEnums#ACK_SUCCESS} 或者 {@link StatusEnums#NACK_SUCCESS} 状态的消息会触发该方法
+     * 若当前消息被标记为 {@link StatusEnums#NEEDS_RETRY}，尝试进行消息的重试
      */
-    default void businessLogicFinishHook(HyggeRabbitMqListenerContext<T> context) throws Exception {
+    default void retryHook(HyggeRabbitMqListenerContext<T> context) throws Exception {
         // do nothing by default
     }
 

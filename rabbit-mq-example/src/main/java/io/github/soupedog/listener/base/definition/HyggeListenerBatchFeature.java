@@ -79,16 +79,16 @@ public interface HyggeListenerBatchFeature<T> extends HyggeListenerBaseFeature, 
     void autoAck(HyggeRabbitMqBatchListenerContext<T> context);
 
     /**
-     * 筛选出被标记为 {@link StatusEnums#NEEDS_RETRY} 的消息，随后进行消息的重试
+     * 消费完成后的业务扫尾处理，仅 {@link StatusEnums#ACK_SUCCESS} 或者 {@link StatusEnums#NACK_SUCCESS} 状态的消息会触发该方法
      */
-    default void retryHook(HyggeRabbitMqBatchListenerContext<T> context, List<HyggeRabbitMQMessageItem<T>> needsRetryList) {
+    default void businessLogicFinishHook(HyggeRabbitMqBatchListenerContext<T> context, List<HyggeRabbitMQMessageItem<T>> needsBusinessLogicFinishList) {
         // do nothing by default
     }
 
     /**
-     * 消费完成后的业务扫尾处理，仅 {@link StatusEnums#ACK_SUCCESS} 或者 {@link StatusEnums#NACK_SUCCESS} 状态的消息会触发该方法
+     * 筛选出被标记为 {@link StatusEnums#NEEDS_RETRY} 的消息，随后进行消息的重试
      */
-    default void businessLogicFinishHook(HyggeRabbitMqBatchListenerContext<T> context, List<HyggeRabbitMQMessageItem<T>> needsBusinessLogicFinishList) {
+    default void retryHook(HyggeRabbitMqBatchListenerContext<T> context, List<HyggeRabbitMQMessageItem<T>> needsRetryList) {
         // do nothing by default
     }
 

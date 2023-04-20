@@ -26,7 +26,7 @@ public class BatchConfig {
 
     @Bean("batchTopicExchange")
     public TopicExchange batchTopicExchange(@Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin) {
-        TopicExchange topicExchange = new TopicExchange(properties.getBatch().getExchange() + ".topic");
+        TopicExchange topicExchange = new TopicExchange(properties.getBatch().getExchange());
         // true 是默认值
         topicExchange.setShouldDeclare(true);
         topicExchange.setAdminsThatShouldDeclare(rabbitAdmin);
@@ -36,7 +36,7 @@ public class BatchConfig {
     @Bean("batchTopicQueue")
     public Queue batchQueue(@Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin) {
         Queue queue = QueueBuilder
-                .durable(properties.getBatch().getExchange() + ".topic")
+                .durable(properties.getBatch().getExchange())
                 .build();
         queue.setAdminsThatShouldDeclare(rabbitAdmin);
         return queue;
