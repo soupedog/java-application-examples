@@ -40,7 +40,7 @@ public class RabbitMqConfig {
         cachingConnectionFactory.setAddresses(properties.getAddress());
         cachingConnectionFactory.setVirtualHost(properties.getVirtualHost());
         // ".setShuffleAddresses(true)" is obsolete in higher versions, in latest version you should use "setAddressShuffleMode(AddressShuffleMode.RANDOM)"
-        cachingConnectionFactory.setAddressShuffleMode(AbstractConnectionFactory.AddressShuffleMode.RANDOM);
+        cachingConnectionFactory.setAddressShuffleMode(AbstractConnectionFactory.AddressShuffleMode.INORDER);
         cachingConnectionFactory.setUsername(properties.getUserName());
         cachingConnectionFactory.setPassword(properties.getPassword());
 
