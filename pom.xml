@@ -8,8 +8,10 @@
     <artifactId>java-application-examples</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
+
     <modules>
         <module>rabbit-mq</module>
+        <module>mybatis-plus-postgre</module>
     </modules>
 
     <properties>

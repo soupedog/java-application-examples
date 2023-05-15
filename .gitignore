@@ -6,3 +6,5 @@
 *.iml
 out
 gen
+/mybatis-plus-postgre/target/
+/rabbit-mq/target/
