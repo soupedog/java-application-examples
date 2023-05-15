@@ -9,7 +9,7 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>rabbit-mq-example</artifactId>
+    <artifactId>rabbit-mq</artifactId>
 
     <dependencies>
         <dependency>

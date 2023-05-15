@@ -9,12 +9,12 @@
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <modules>
-        <module>rabbit-mq-example</module>
+        <module>rabbit-mq</module>
     </modules>
 
     <properties>
-        <spring.boot.version>2.7.10</spring.boot.version>
-        <hygge.version>0.0.6</hygge.version>
+        <spring.boot.version>2.7.11</spring.boot.version>
+        <hygge.version>0.0.7</hygge.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
