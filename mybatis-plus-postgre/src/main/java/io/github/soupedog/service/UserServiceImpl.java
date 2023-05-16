@@ -54,6 +54,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return user;
     }
 
+    public User saveUser2(User user) {
+        user.setCreateTs(new Timestamp(System.currentTimeMillis()));
+        user.setLastUpdateTs(user.getCreateTs());
+        userMapper.saveUser2(user);
+        return user;
+    }
+
     public boolean updateUser(Long uid, Map<String, Object> updateInfo, Timestamp currentTs) {
         HashMap<String, Object> updateMap = daoHelper.filterOutTheFinalColumns(updateInfo, forUpdate, map -> {
             map.put("last_update_ts", currentTs);

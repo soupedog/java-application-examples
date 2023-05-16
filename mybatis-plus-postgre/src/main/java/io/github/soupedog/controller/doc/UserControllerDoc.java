@@ -17,6 +17,8 @@ import java.util.Map;
 public interface UserControllerDoc {
     ResponseEntity<?> save(User user);
 
+    ResponseEntity<?> save2(User user);
+
     // 写得糙了一点，复用了冗余量很大的 User 对象做 swagger 提示
     @RequestBody(
             content = {@Content(schema =
