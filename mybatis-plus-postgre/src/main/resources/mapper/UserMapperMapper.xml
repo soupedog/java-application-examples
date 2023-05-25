@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="io.github.soupedog.dao.UserMapper">
-    <sql id="AllColumnList">uid,"sequence","NAME",user_sex,user_state,"configuration",create_ts,last_update_ts</sql>
+    <sql id="AllColumnList">uid,"sequence","NAME",balance,user_sex,user_state,"configuration",create_ts,last_update_ts</sql>
 
     <sql id="DynamicColumnList">
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="user.sequence != null">"sequence",</if>
             <if test="user.name != null">"NAME",</if>
+            <if test="user.balance != null">balance,</if>
             <if test="user.userSex != null">user_sex,</if>
             <if test="user.userState != null">user_state,</if>
             <if test="user.configuration != null">"configuration",</if>
@@ -19,6 +20,7 @@
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="user.sequence != null">#{user.sequence},</if>
             <if test="user.name != null">#{user.name},</if>
+            <if test="user.balance != null">#{user.balance},</if>
             <if test="user.userSex != null">#{user.userSex},</if>
             <if test="user.userState != null">#{user.userState},</if>
             <if test="user.configuration != null">#{user.configuration},</if>
@@ -31,12 +33,41 @@
     <!--他们两种 id 回写到 Java 对象是互斥的，同时似乎只有一个能生效，示例代码是不想再新建一个表就合并在一起写在这儿了-->
     <!--你可以通过自主取消注释进行调试，trim 的 if 判断囊括了序列不存在的情况，不会报错-->
     <insert id="saveUser2" useGeneratedKeys="true" keyProperty="uid">
-        <!--<selectKey keyProperty="user.sequence" resultType="long" order="BEFORE">-->
-        <!--    select NEXTVAL('local_test.user_sequence');-->
-        <!--</selectKey>-->
+        <selectKey keyProperty="user.sequence" resultType="long" order="BEFORE">
+            select NEXTVAL('local_test.user_sequence');
+        </selectKey>
         insert into local_test."user"
         <include refid="DynamicColumnList"/>
         values<include refid="DynamicValueList"/>;
+    </insert>
+
+    <insert id="saveOrUpdateUserMultiple" useGeneratedKeys="true" keyProperty="uid">
+        <foreach item="item" index="index" collection="userList" open="" separator=";" close="" nullable="true">
+            insert into
+            local_test."user"
+            <trim prefix="(" suffix=")" suffixOverrides=",">
+                <if test="true">"sequence",</if>
+                <if test="item.name != null">"NAME",</if>
+                <if test="item.balance != null">balance,</if>
+                <if test="item.userSex != null">user_sex,</if>
+                <if test="item.userState != null">user_state,</if>
+                <if test="item.configuration != null">"configuration",</if>
+                <if test="item.createTs != null">create_ts,</if>
+                <if test="item.lastUpdateTs != null">last_update_ts,</if>
+            </trim>
+            values
+            <trim prefix="(" suffix=")" suffixOverrides=",">
+                <if test="true">NEXTVAL('local_test.user_sequence'),</if>
+                <if test="item.name != null">#{item.name},</if>
+                <if test="item.balance != null">#{item.balance},</if>
+                <if test="item.userSex != null">#{item.userSex},</if>
+                <if test="item.userState != null">#{item.userState},</if>
+                <if test="item.configuration != null">#{item.configuration},</if>
+                <if test="item.createTs != null">#{item.createTs},</if>
+                <if test="item.lastUpdateTs != null">#{item.lastUpdateTs},</if>
+            </trim>
+            ON CONFLICT ("NAME") DO UPDATE SET balance= #{item.balance} AND user_state = #{item.userState},
+        </foreach>
     </insert>
 
     <update id="updateUser2">

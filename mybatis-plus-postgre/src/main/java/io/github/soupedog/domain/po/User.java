@@ -15,6 +15,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 /**
  * @author Xavier
  * @date 2023/5/15
@@ -38,6 +40,7 @@ public class User extends BasePO {
      */
     @TableField("\"NAME\"")
     private String name;
+    private BigDecimal balance;
     @EnumValue
     private UserSexEnum userSex;
     @EnumValue

@@ -27,6 +27,8 @@ public interface UserMapper extends BaseMapper<User> {
      */
     int saveUser2(@Param("user") User user);
 
+    int saveOrUpdateUserMultiple(@Param("userList") List<User> userList);
+
     /**
      * 更新 User(允许置 null 也允许局部更新)
      *

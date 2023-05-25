@@ -44,6 +44,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     static {
         forUpdate.add(new ColumnInfo("name", "\"NAME\"", ColumnTypeEnum.STRING, true, false, 1, 50));
+        forUpdate.add(new ColumnInfo("balance", null, ColumnTypeEnum.BIG_DECIMAL, true, false, 0, 9999999));
         forUpdate.add(new ColumnInfo("configuration", null, ColumnTypeEnum.OTHER_OBJECT, true, true, 0, 0));
     }
 
