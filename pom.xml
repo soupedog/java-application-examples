@@ -15,8 +15,8 @@
     </modules>
 
     <properties>
-        <spring.boot.version>2.7.11</spring.boot.version>
-        <hygge.version>0.0.7</hygge.version>
+        <spring.boot.version>2.7.12</spring.boot.version>
+        <hygge.version>0.0.9</hygge.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

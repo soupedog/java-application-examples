@@ -41,6 +41,7 @@
         values<include refid="DynamicValueList"/>;
     </insert>
 
+    <!--单次 dao 操作执行多条 sql(;代表单挑语句结束)，会导致返回值丧失意义，推荐使用 merge into 之类的语句-->
     <insert id="saveOrUpdateUserMultiple" useGeneratedKeys="true" keyProperty="uid">
         <foreach item="item" index="index" collection="userList" open="" separator=";" close="" nullable="true">
             insert into

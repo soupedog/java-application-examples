@@ -1,7 +1,6 @@
 package io.github.soupedog.service;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import hygge.commons.constant.enums.ColumnTypeEnum;
 import hygge.commons.exception.ParameterRuntimeException;
 import hygge.util.UtilCreator;
 import hygge.util.bo.ColumnInfo;
@@ -12,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,9 +44,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private static final Collection<ColumnInfo> forUpdate = new ArrayList<>();
 
     static {
-        forUpdate.add(new ColumnInfo("name", "\"NAME\"", ColumnTypeEnum.STRING, true, false, 1, 50));
-        forUpdate.add(new ColumnInfo("balance", null, ColumnTypeEnum.BIG_DECIMAL, true, false, 0, 9999999));
-        forUpdate.add(new ColumnInfo("configuration", null, ColumnTypeEnum.OTHER_OBJECT, true, true, 0, 0));
+        forUpdate.add(new ColumnInfo(true, false, "name", "\"NAME\"").toStringColumn(1, 50));
+        forUpdate.add(new ColumnInfo(true, false, "balance", null, 2, RoundingMode.HALF_UP, BigDecimal.ZERO, new BigDecimal(Integer.MAX_VALUE)));
+        forUpdate.add(new ColumnInfo(true, true, "configuration", null));
     }
 
     public User saveUser(User user) {
