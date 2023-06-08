@@ -19,6 +19,8 @@ import java.util.Map;
  */
 @Mapper
 public interface UserMapper extends BaseMapper<User> {
+    long getNextUserSequence();
+
     /**
      * 不会覆盖数据库表设置的 defaultValue 的方式插入一个 User 对象（IService 已经提供此功能，该方法仅为演示 mapper.xml 用法）
      *
@@ -38,7 +40,6 @@ public interface UserMapper extends BaseMapper<User> {
      * @return 数据库受影响行
      */
     int updateUser2(@Param("uid") Long uid, @Param("dataMap") Map<String, Object> dataMap, @Param("updateLimitTime") Timestamp updateLimitTime);
-
 
     /**
      * 根据主键别名查询 User 对象并用其 User.name 属性做 key 返回 Map 对象(因为 HashMap 无序，故此处 orderInfo 无实际意义，仅展示动态 SQL 用法)

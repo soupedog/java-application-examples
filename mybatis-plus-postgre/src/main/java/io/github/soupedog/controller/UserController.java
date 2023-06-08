@@ -33,9 +33,11 @@ public class UserController extends HyggeWebUtilContainer implements UserControl
     @Override
     @PostMapping("/user")
     public ResponseEntity<?> save(@RequestBody User user) {
-        // 这是一个愚蠢的操作，PO 和 DTO 用同一个，此处仅用于图方便演示
+        // 这是一个愚蠢的操作，PO 和 DTO 用同一个，此处仅用于图方便演示，做一些参数清理
         user.setUid(null);
         user.setSequence(null);
+        user.setCreateTs(null);
+        user.setLastUpdateTs(null);
         return success(userService.saveUser(user));
     }
 

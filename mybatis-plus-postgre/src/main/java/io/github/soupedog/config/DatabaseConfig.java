@@ -3,8 +3,11 @@ package io.github.soupedog.config;
 import com.baomidou.mybatisplus.autoconfigure.SpringBootVFS;
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.MybatisXMLLanguageDriver;
+import com.baomidou.mybatisplus.core.config.GlobalConfig;
+import com.baomidou.mybatisplus.core.toolkit.GlobalConfigUtils;
 import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
 import com.zaxxer.hikari.HikariDataSource;
+import io.github.soupedog.dao.handler.AutoUpdateTimestampOfCreateAndUpdateMetaObjectHandler;
 import io.github.soupedog.dao.handler.UserConfigurationTypeHandler;
 import io.github.soupedog.domain.po.inner.UserConfiguration;
 import org.apache.ibatis.io.VFS;
@@ -45,6 +48,7 @@ public class DatabaseConfig {
         hikariDataSource.setDriverClassName(org.postgresql.Driver.class.getName());
         hikariDataSource.setMinimumIdle(1);
         hikariDataSource.setMaximumPoolSize(10);
+        // 毫秒
         hikariDataSource.setIdleTimeout(600000);
         return hikariDataSource;
     }
@@ -55,6 +59,7 @@ public class DatabaseConfig {
         // 如果使用 Mybatis 则是 "org.mybatis.spring.SqlSessionFactoryBean" 这个类
         MybatisSqlSessionFactoryBean mybatisSqlSessionFactoryBean = new MybatisSqlSessionFactoryBean();
         mybatisSqlSessionFactoryBean.setDataSource(hikariDataSource);
+
         VFS.addImplClass(SpringBootVFS.class);
         String typeAliasesPackage = "io.github.soupedog.domain.po;";
         // 扫描Mybatis所用到的返回entity类型
@@ -65,10 +70,15 @@ public class DatabaseConfig {
             mybatisSqlSessionFactoryBean.setMapperLocations(resolver.getResources("classpath*:/mapper/*.xml"));
             // 如果使用 Mybatis 则是 "org.apache.ibatis.session.Configuration"
             MybatisConfiguration configuration = new MybatisConfiguration();
+
+            // 这也是一种开启 sql 日志的办法，但是输出的 sql 语句仍然带占位符，不能直接丢进数据库执行
+            // 个人评价不如 "logging.level" 方式开启日志
+            // configuration.setLogImpl(org.apache.ibatis.logging.stdout.StdOutImpl.class);
             configuration.setDefaultScriptingLanguage(MybatisXMLLanguageDriver.class);
             configuration.setJdbcTypeForNull(JdbcType.NULL);
             // 不开启下划线转驼峰(postgre 的 sql 语句大小写敏感，而且不加双引号的大写会默认为小写，开启转换更方便)
             configuration.setMapUnderscoreToCamelCase(true);
+            mybatisSqlSessionFactoryBean.setConfiguration(configuration);
 
             // 如果有特殊字段类型需要在数据库与 PO 之间来回转换，可以注册多种转换(此处配置的是全局生效)
             // 局部生效可在 PO 对象属性上标记 "com.baomidou.mybatisplus.annotation.TableField" 来指定
@@ -76,7 +86,11 @@ public class DatabaseConfig {
             registry.register(UserConfiguration.class, JdbcType.VARCHAR, new UserConfigurationTypeHandler());
             registry.register(JdbcType.VARCHAR, new UserConfigurationTypeHandler());
 
-            mybatisSqlSessionFactoryBean.setConfiguration(configuration);
+            // 自动设置时间戳
+            GlobalConfig globalConfig= GlobalConfigUtils.defaults();
+            globalConfig.setMetaObjectHandler(new AutoUpdateTimestampOfCreateAndUpdateMetaObjectHandler());
+            mybatisSqlSessionFactoryBean.setGlobalConfig(globalConfig);
+
             return mybatisSqlSessionFactoryBean.getObject();
         } catch (Exception e) {
             e.printStackTrace();

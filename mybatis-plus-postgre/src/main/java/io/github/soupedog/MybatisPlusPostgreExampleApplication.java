@@ -4,6 +4,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
+ * <a href="https://jdbc.postgresql.org/documentation/setup/">postgreSQL 驱动参考资料</a>
+ * <p/>
+ * <a href="https://www.postgresql.org/docs/current/index.html">postgreSQL 参考资料</a>
+ * <p/>
  * <a href="https://mybatis.org/mybatis-3/index.html">mybatis 参考资料</a>
  * <p/>
  * <a href="https://github.com/mybatis/spring-boot-starter">mybatis-spring-boot-starter 参考资料</a>

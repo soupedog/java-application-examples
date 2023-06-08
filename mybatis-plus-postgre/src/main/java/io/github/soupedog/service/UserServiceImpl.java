@@ -50,8 +50,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     public User saveUser(User user) {
-        user.setCreateTs(new Timestamp(System.currentTimeMillis()));
-        user.setLastUpdateTs(user.getCreateTs());
         save(user);
         return user;
     }

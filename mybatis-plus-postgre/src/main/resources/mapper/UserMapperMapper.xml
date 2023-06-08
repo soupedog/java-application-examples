@@ -29,6 +29,10 @@
         </trim>
     </sql>
 
+    <select id="getNextUserSequence" resultType="long">
+        SELECT NEXTVAL('local_test.user_sequence');
+    </select>
+
     <!--这里对初学者不太友好，useGeneratedKeys 是指可自增的字段(常见于 mysql 或高版本 postgreSQL 的 identity 自增类型) 、selectKey 是指非自增字段(常见于 Oracle/postgreSQL)-->
     <!--他们两种 id 回写到 Java 对象是互斥的，同时似乎只有一个能生效，示例代码是不想再新建一个表就合并在一起写在这儿了-->
     <!--你可以通过自主取消注释进行调试，trim 的 if 判断囊括了序列不存在的情况，不会报错-->
