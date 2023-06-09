@@ -10,6 +10,7 @@ import io.github.soupedog.domain.po.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -49,19 +50,25 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         forUpdate.add(new ColumnInfo(true, true, "configuration", null));
     }
 
-    public User saveUser(User user) {
-        save(user);
+    @Transactional
+    public User saveOrUpdateUser(User user) {
+        // 原理是先查询，不存在则进行覆盖式更新
+        saveOrUpdate(user);
         return user;
     }
 
-    public User saveUser2(User user) {
+    public User queryUserByUid(Long uid) {
+        return userMapper.selectById(uid);
+    }
+
+    public User customSaveUser(User user) {
         user.setCreateTs(new Timestamp(System.currentTimeMillis()));
         user.setLastUpdateTs(user.getCreateTs());
-        userMapper.saveUser2(user);
+        userMapper.customSaveUser(user);
         return user;
     }
 
-    public boolean updateUser(Long uid, Map<String, Object> updateInfo, Timestamp currentTs) {
+    public boolean customUpdateUser(Long uid, Map<String, Object> updateInfo, Timestamp currentTs) {
         HashMap<String, Object> updateMap = daoHelper.filterOutTheFinalColumns(updateInfo, forUpdate, map -> {
             map.put("last_update_ts", currentTs);
             return map;
@@ -72,7 +79,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new ParameterRuntimeException("The update information cannot be empty, they can be [name]/[configuration].");
         }
 
-        int affectedLine = userMapper.updateUser2(uid, updateMap, currentTs);
+        int affectedLine = userMapper.customUpdateUser(uid, updateMap, currentTs);
 
         if (affectedLine != 1) {
             log.warn("Fail to update User({}), affectedLine expected 1, but we found {}.", uid, affectedLine);
@@ -81,11 +88,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return true;
     }
 
-    public User queryUserByUid(Long uid) {
-        return userMapper.selectById(uid);
-    }
-
-    public Map<String, User> queryUserByUid(Collection<Long> uidCollection) {
-        return userMapper.queryUserMultiple(uidCollection, null);
+    public Map<String, User> customQueryUserMultiple(Collection<Long> uidCollection) {
+        return userMapper.customQueryUserMultiple(uidCollection, null);
     }
 }

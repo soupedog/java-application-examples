@@ -36,7 +36,7 @@
     <!--这里对初学者不太友好，useGeneratedKeys 是指可自增的字段(常见于 mysql 或高版本 postgreSQL 的 identity 自增类型) 、selectKey 是指非自增字段(常见于 Oracle/postgreSQL)-->
     <!--他们两种 id 回写到 Java 对象是互斥的，同时似乎只有一个能生效，示例代码是不想再新建一个表就合并在一起写在这儿了-->
     <!--你可以通过自主取消注释进行调试，trim 的 if 判断囊括了序列不存在的情况，不会报错-->
-    <insert id="saveUser2" useGeneratedKeys="true" keyProperty="uid">
+    <insert id="customSaveUser" useGeneratedKeys="true" keyProperty="uid">
         <selectKey keyProperty="user.sequence" resultType="long" order="BEFORE">
             select NEXTVAL('local_test.user_sequence');
         </selectKey>
@@ -46,7 +46,7 @@
     </insert>
 
     <!--单次 dao 操作执行多条 sql(;代表单挑语句结束)，会导致返回值丧失意义，推荐使用 merge into 之类的语句-->
-    <insert id="saveOrUpdateUserMultiple" useGeneratedKeys="true" keyProperty="uid">
+    <insert id="customSaveOrUpdateUserMultiple" useGeneratedKeys="true" keyProperty="uid">
         <foreach item="item" index="index" collection="userList" open="" separator=";" close="" nullable="true">
             insert into
             local_test."user"
@@ -75,7 +75,7 @@
         </foreach>
     </insert>
 
-    <update id="updateUser2">
+    <update id="customUpdateUser">
         update local_test."user"
         <foreach collection="dataMap" index="key" item="val" open="SET" separator="," close="">${key} = #{val}</foreach>
         <trim prefix="WHERE" prefixOverrides="AND |OR ">
@@ -85,7 +85,7 @@
         ;
     </update>
 
-    <select id="queryUserMultiple" resultType="io.github.soupedog.domain.po.User">
+    <select id="customQueryUserMultiple" resultType="io.github.soupedog.domain.po.User">
         select
         <include refid="AllColumnList"/>
         from local_test."user"
