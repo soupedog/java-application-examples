@@ -68,7 +68,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     public boolean customUpdateUser(Long uid, Map<String, Object> updateInfo, Timestamp currentTs) {
-        // 筛选结果不为空时才会激发成果回调
+        // 筛选结果不为空时才会激发成功回调
         HashMap<String, Object> updateMap = daoHelper.filterOutTheFinalColumns(updateInfo, forUpdate, map -> {
             map.put("last_update_ts", currentTs);
             return map;
