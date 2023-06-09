@@ -1,7 +1,6 @@
 package io.github.soupedog.service;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import hygge.commons.exception.ParameterRuntimeException;
 import hygge.util.UtilCreator;
 import hygge.util.bo.ColumnInfo;
 import hygge.util.definition.DaoHelper;
@@ -69,15 +68,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     public boolean customUpdateUser(Long uid, Map<String, Object> updateInfo, Timestamp currentTs) {
+        // 筛选结果不为空时才会激发成果回调
         HashMap<String, Object> updateMap = daoHelper.filterOutTheFinalColumns(updateInfo, forUpdate, map -> {
             map.put("last_update_ts", currentTs);
             return map;
         });
-
-        if (updateMap.size() <= 1) {
-            // 过滤后仅有 last_update_ts 字段时，则说明无有效更新字段
-            throw new ParameterRuntimeException("The update information cannot be empty, they can be [name]/[configuration].");
-        }
 
         int affectedLine = userMapper.customUpdateUser(uid, updateMap, currentTs);
 
