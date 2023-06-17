@@ -10,7 +10,7 @@ import javax.sql.DataSource;
 import java.sql.Timestamp;
 
 /**
- * 元数据填充工具，需要注册后才能生效
+ * MybatisPlus 代理方法的元数据填充工具，需要注册后才能生效，且 xml 中自定义的方法不会生效
  *
  * @author Xavier
  * @date 2023/6/08

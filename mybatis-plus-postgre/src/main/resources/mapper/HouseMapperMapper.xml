@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.github.soupedog.dao.HouseMapper">
+    <!--语句里加 ";" 在这里反而是个坏习惯， mybatis 插件机制模板里提前用 ";" 终止语句会给插件功能实现带来麻烦-->
+
+    <sql id="AllColumnList">hid,"location",create_ts,last_update_ts</sql>
+
+    <sql id="DynamicColumnList">
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="house.hid != null">hid,</if>
+            <if test="house.location != null">"location",</if>
+            <if test="house.createTs != null">create_ts,</if>
+            <if test="house.lastUpdateTs != null">last_update_ts,</if>
+        </trim>
+    </sql>
+
+    <sql id="DynamicValueList">
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="house.hid != null">#{house.hid},</if>
+            <if test="house.location != null">#{house.location},</if>
+            <if test="house.createTs != null">#{house.createTs},</if>
+            <if test="house.lastUpdateTs != null">#{house.lastUpdateTs},</if>
+        </trim>
+    </sql>
+
+    <select id="getNextHid" resultType="long">
+        SELECT NEXTVAL('local_test.house_hid_seq')
+    </select>
+
+    <!--好习惯 @Param("house") 带来的影响是： keyProperty 中得加对象名称而不是光字段名称才会回写到 PO 对象中了-->
+    <insert id="customSaveHouse" keyProperty="uid">
+        <selectKey keyProperty="house.hid" resultType="long" order="BEFORE">
+            SELECT NEXTVAL('local_test.house_hid_seq')
+        </selectKey>
+        INSERT INTO local_test."house"
+        <include refid="DynamicColumnList"/>
+        VALUES
+        <include refid="DynamicValueList"/>
+    </insert>
+
+    <insert id="customSaveOrUpdateHouseMultiple">
+        MERGE INTO local_test."house" AS source_info
+        USING(
+        <foreach item="item" index="index" collection="houseList" open="" separator="UNION ALL" close=""
+                 nullable="true">
+            SELECT
+            #{item.hid}::bigint AS hid,
+            #{item.location} AS "location",
+            #{item.createTs}::timestamp AS create_ts,
+            #{item.lastUpdateTs}::timestamp AS last_update_ts
+        </foreach>
+        ) AS new_info
+        ON (source_info."location" = new_info."location")
+        WHEN MATCHED THEN
+        UPDATE SET
+        last_update_ts = CURRENT_TIMESTAMP
+        WHEN NOT MATCHED THEN
+        INSERT (hid,"location",create_ts,last_update_ts)
+        VALUES (NEXTVAL('local_test.house_hid_seq'), new_info."location", new_info.create_ts, new_info.last_update_ts)
+    </insert>
+</mapper>

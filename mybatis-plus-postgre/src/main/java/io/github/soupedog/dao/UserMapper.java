@@ -19,8 +19,6 @@ import java.util.Map;
  */
 @Mapper
 public interface UserMapper extends BaseMapper<User> {
-    long getNextUserSequence();
-
     /**
      * 不会覆盖数据库表设置的 defaultValue 的方式插入一个 User 对象（IService 已经提供此功能，该方法仅为演示 mapper.xml 用法）
      *
@@ -29,6 +27,10 @@ public interface UserMapper extends BaseMapper<User> {
      */
     int customSaveUser(@Param("user") User user);
 
+    /**
+     * 单纯演示功能，要求有 UK 才能使用 conflict 关键字。<br/>
+     * 演示的逻辑是：名字冲突时，设置状态为 INACTIVE 并清空余额
+     */
     int customSaveOrUpdateUserMultiple(@Param("userList") List<User> userList);
 
     /**

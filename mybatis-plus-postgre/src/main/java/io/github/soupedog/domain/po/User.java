@@ -11,6 +11,7 @@ import io.github.soupedog.domain.po.base.BasePO;
 import io.github.soupedog.domain.po.inner.UserConfiguration;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Generated;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -25,16 +26,13 @@ import java.math.BigDecimal;
 @Getter
 @Setter
 @Builder
+@Generated
 @NoArgsConstructor
 @AllArgsConstructor
 @TableName(schema = "local_test", value = "user")
 public class User extends BasePO {
     @TableId(type = IdType.AUTO)
     private Long uid;
-    /**
-     * 用于演示自增字段如何使用
-     */
-    private Long sequence;
     /**
      * 用于演示特殊数据库字段和 PO 属性映射，此处为数据库大写字段映射到小驼峰 PO 实体
      */

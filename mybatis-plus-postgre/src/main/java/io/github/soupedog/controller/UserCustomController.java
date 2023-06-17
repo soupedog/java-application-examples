@@ -5,7 +5,7 @@ import hygge.web.template.definition.HyggeController;
 import io.github.soupedog.controller.doc.UserCustomControllerDoc;
 import io.github.soupedog.domain.po.User;
 import io.github.soupedog.domain.po.inner.UserConfiguration;
-import io.github.soupedog.service.UserServiceImpl;
+import io.github.soupedog.service.impl.UserServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,7 +35,6 @@ public class UserCustomController extends HyggeWebUtilContainer implements UserC
     public ResponseEntity<?> customSaveUser(@RequestBody User user) {
         // 这是一个愚蠢的操作，PO 和 DTO 用同一个，此处仅用于图方便演示
         user.setUid(null);
-        user.setSequence(null);
         return success(userService.customSaveUser(user));
     }
 

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import io.github.soupedog.dao.handler.AutoUpdateTimestampOfCreateAndUpdateMetaObjectHandler;
+import lombok.Generated;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.ibatis.reflection.MetaObject;
@@ -17,6 +18,7 @@ import java.sql.Timestamp;
  */
 @Getter
 @Setter
+@Generated
 public abstract class BasePO {
     /**
      * 无法光靠注解生效，需要配合 {@link MetaObjectHandler}

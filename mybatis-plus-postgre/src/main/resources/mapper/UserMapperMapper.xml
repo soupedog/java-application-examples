@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="io.github.soupedog.dao.UserMapper">
-    <sql id="AllColumnList">uid,"sequence","NAME",balance,user_sex,user_state,"configuration",create_ts,last_update_ts</sql>
+    <!--语句里加 ";" 在这里反而是个坏习惯， mybatis 插件机制模板里提前用 ";" 终止语句会给插件功能实现带来麻烦-->
+
+    <sql id="AllColumnList">uid,"NAME",balance,user_sex,user_state,"configuration",create_ts,last_update_ts</sql>
 
     <sql id="DynamicColumnList">
         <trim prefix="(" suffix=")" suffixOverrides=",">
-            <if test="user.sequence != null">"sequence",</if>
             <if test="user.name != null">"NAME",</if>
             <if test="user.balance != null">balance,</if>
             <if test="user.userSex != null">user_sex,</if>
@@ -18,7 +19,6 @@
 
     <sql id="DynamicValueList">
         <trim prefix="(" suffix=")" suffixOverrides=",">
-            <if test="user.sequence != null">#{user.sequence},</if>
             <if test="user.name != null">#{user.name},</if>
             <if test="user.balance != null">#{user.balance},</if>
             <if test="user.userSex != null">#{user.userSex},</if>
@@ -29,29 +29,20 @@
         </trim>
     </sql>
 
-    <select id="getNextUserSequence" resultType="long">
-        SELECT NEXTVAL('local_test.user_sequence');
-    </select>
-
-    <!--这里对初学者不太友好，useGeneratedKeys 是指可自增的字段(常见于 mysql 或高版本 postgreSQL 的 identity 自增类型) 、selectKey 是指非自增字段(常见于 Oracle/postgreSQL)-->
-    <!--他们两种 id 回写到 Java 对象是互斥的，同时似乎只有一个能生效，示例代码是不想再新建一个表就合并在一起写在这儿了-->
-    <!--你可以通过自主取消注释进行调试，trim 的 if 判断囊括了序列不存在的情况，不会报错-->
+    <!--useGeneratedKeys 是指可自增的字段自动获取并回写到 PO 对象(常见于 mysql 或高版本 postgreSQL 的 identity 自增类型)-->
     <insert id="customSaveUser" useGeneratedKeys="true" keyProperty="uid">
-        <selectKey keyProperty="user.sequence" resultType="long" order="BEFORE">
-            select NEXTVAL('local_test.user_sequence');
-        </selectKey>
-        insert into local_test."user"
+        INSERT INTO local_test."user"
         <include refid="DynamicColumnList"/>
-        values<include refid="DynamicValueList"/>;
+        VALUES
+        <include refid="DynamicValueList"/>
     </insert>
 
     <!--单次 dao 操作执行多条 sql(;代表单挑语句结束)，会导致返回值丧失意义，推荐使用 merge into 之类的语句-->
     <insert id="customSaveOrUpdateUserMultiple" useGeneratedKeys="true" keyProperty="uid">
         <foreach item="item" index="index" collection="userList" open="" separator=";" close="" nullable="true">
-            insert into
+            INSERT INTO
             local_test."user"
             <trim prefix="(" suffix=")" suffixOverrides=",">
-                <if test="true">"sequence",</if>
                 <if test="item.name != null">"NAME",</if>
                 <if test="item.balance != null">balance,</if>
                 <if test="item.userSex != null">user_sex,</if>
@@ -60,9 +51,8 @@
                 <if test="item.createTs != null">create_ts,</if>
                 <if test="item.lastUpdateTs != null">last_update_ts,</if>
             </trim>
-            values
+            VALUES
             <trim prefix="(" suffix=")" suffixOverrides=",">
-                <if test="true">NEXTVAL('local_test.user_sequence'),</if>
                 <if test="item.name != null">#{item.name},</if>
                 <if test="item.balance != null">#{item.balance},</if>
                 <if test="item.userSex != null">#{item.userSex},</if>
@@ -71,30 +61,29 @@
                 <if test="item.createTs != null">#{item.createTs},</if>
                 <if test="item.lastUpdateTs != null">#{item.lastUpdateTs},</if>
             </trim>
-            ON CONFLICT ("NAME") DO UPDATE SET balance= #{item.balance} AND user_state = #{item.userState},
+            ON CONFLICT ("NAME") DO UPDATE SET balance= 0.00, user_state = 'INACTIVE'
         </foreach>
     </insert>
 
     <update id="customUpdateUser">
-        update local_test."user"
+        UPDATE local_test."user"
         <foreach collection="dataMap" index="key" item="val" open="SET" separator="," close="">${key} = #{val}</foreach>
         <trim prefix="WHERE" prefixOverrides="AND |OR ">
-            <if test="uid != null">and uid = #{uid}</if>
-            and last_update_ts &lt;= #{updateLimitTime}
+            <if test="uid != null">AND uid = #{uid}</if>
+            AND last_update_ts &lt;= #{updateLimitTime}
         </trim>
-        ;
     </update>
 
     <select id="customQueryUserMultiple" resultType="io.github.soupedog.domain.po.User">
-        select
+        SELECT
         <include refid="AllColumnList"/>
-        from local_test."user"
+        FROM local_test."user"
         <trim prefix="WHERE" prefixOverrides="AND |OR ">
-            <if test="uidCollection != null and !uidCollection.isEmpty()">and uid in
+            <if test="uidCollection != null and !uidCollection.isEmpty()">AND uid IN
                 <foreach collection="uidCollection" index="index" item="item" open="(" separator="," close=")">#{item}
                 </foreach>
             </if>
         </trim>
-        <if test="orderInfo != null">order by ${orderInfo}</if>;
+        <if test="orderInfo != null">ORDER BY ${orderInfo}</if>
     </select>
 </mapper>

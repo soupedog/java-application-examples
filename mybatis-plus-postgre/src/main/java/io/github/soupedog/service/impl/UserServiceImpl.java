@@ -1,13 +1,15 @@
-package io.github.soupedog.service;
+package io.github.soupedog.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import hygge.util.UtilCreator;
 import hygge.util.bo.ColumnInfo;
 import hygge.util.definition.DaoHelper;
 import io.github.soupedog.dao.UserMapper;
 import io.github.soupedog.domain.po.User;
+import io.github.soupedog.service.UserService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,7 +28,7 @@ import java.util.Map;
  * <pre>
  *     userService.query().eq("uid", uid).one();
  *
- *     userMapper.selectById(uid);
+ *     baseMapper.selectById(uid);
  * </pre>
  *
  * @author Xavier
@@ -37,9 +39,6 @@ import java.util.Map;
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
     private static final DaoHelper daoHelper = UtilCreator.INSTANCE.getDefaultInstance(DaoHelper.class);
-
-    @Autowired
-    private UserMapper userMapper;
 
     private static final Collection<ColumnInfo> forUpdate = new ArrayList<>();
 
@@ -56,14 +55,23 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return user;
     }
 
+    /**
+     * 与
+     * <pre>
+     *     baseMapper.selectById(uid)
+     * </pre>
+     * 等效
+     */
     public User queryUserByUid(Long uid) {
-        return userMapper.selectById(uid);
+        LambdaQueryWrapper<User> queryWrapper = Wrappers.<User>lambdaQuery()
+                .eq(User::getUid, uid);
+        return baseMapper.selectOne(queryWrapper);
     }
 
     public User customSaveUser(User user) {
         user.setCreateTs(new Timestamp(System.currentTimeMillis()));
         user.setLastUpdateTs(user.getCreateTs());
-        userMapper.customSaveUser(user);
+        baseMapper.customSaveUser(user);
         return user;
     }
 
@@ -74,7 +82,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             return map;
         });
 
-        int affectedLine = userMapper.customUpdateUser(uid, updateMap, currentTs);
+        int affectedLine = baseMapper.customUpdateUser(uid, updateMap, currentTs);
 
         if (affectedLine != 1) {
             log.warn("Fail to update User({}), affectedLine expected 1, but we found {}.", uid, affectedLine);
@@ -84,6 +92,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     public Map<String, User> customQueryUserMultiple(Collection<Long> uidCollection) {
-        return userMapper.customQueryUserMultiple(uidCollection, null);
+        return baseMapper.customQueryUserMultiple(uidCollection, null);
     }
 }
