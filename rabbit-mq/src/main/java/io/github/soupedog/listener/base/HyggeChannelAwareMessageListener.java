@@ -21,10 +21,10 @@ public abstract class HyggeChannelAwareMessageListener<T> implements HyggeListen
     protected String environmentName;
     protected long requeueToTailMillisecondInterval = 500L;
     protected int maxRequeueTimes = 500;
-    protected static String HEADERS_KEY_ENVIRONMENT_NAME = DEFAULT_HEADERS_KEY_ENVIRONMENT_NAME;
-    protected static String HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER = DEFAULT_HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER;
+    protected static String headersKeyEnvironmentName = DEFAULT_HEADERS_KEY_ENVIRONMENT_NAME;
+    protected static String headersKeyRequeueToTailCounter = DEFAULT_HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER;
 
-    public HyggeChannelAwareMessageListener(String listenerName, String environmentName) {
+    protected HyggeChannelAwareMessageListener(String listenerName, String environmentName) {
         this.listenerName = listenerName;
         this.environmentName = environmentName;
     }
@@ -142,7 +142,7 @@ public abstract class HyggeChannelAwareMessageListener<T> implements HyggeListen
     public boolean isRequeueEnable(HyggeRabbitMqListenerContext<T> context) throws Exception {
         HyggeRabbitMQMessageItem<T> messageItem = context.getRwaMessage();
 
-        String messageEnvironmentName = getValueFromHeaders(messageItem, HEADERS_KEY_ENVIRONMENT_NAME, true);
+        String messageEnvironmentName = getValueFromHeaders(messageItem, headersKeyEnvironmentName, true);
 
         if (!environmentName.equals(messageEnvironmentName) && parameterHelper.isNotEmpty(messageEnvironmentName)) {
             messageItem.setStatus(StatusEnums.NEEDS_REQUEUE);
@@ -169,8 +169,8 @@ public abstract class HyggeChannelAwareMessageListener<T> implements HyggeListen
         Channel channel = context.getChannel();
         Message message = messageItem.getMessage();
 
-        int requeueCounter = parameterHelper.integerFormatOfNullable(HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER, getValueFromHeaders(messageItem, HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER, true), 0);
-        requeueToTail(channel, message, HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER, requeueCounter, maxRequeueTimes);
+        int requeueCounter = parameterHelper.integerFormatOfNullable(headersKeyRequeueToTailCounter, getValueFromHeaders(messageItem, headersKeyRequeueToTailCounter, true), 0);
+        requeueToTail(channel, message, headersKeyRequeueToTailCounter, requeueCounter, maxRequeueTimes);
 
         messageItem.setStatus(StatusEnums.REQUEUE_SUCCESS);
     }

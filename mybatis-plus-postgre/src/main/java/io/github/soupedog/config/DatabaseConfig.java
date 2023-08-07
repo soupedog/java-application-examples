@@ -1,5 +1,6 @@
 package io.github.soupedog.config;
 
+import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import com.baomidou.mybatisplus.autoconfigure.SpringBootVFS;
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.MybatisXMLLanguageDriver;
@@ -21,6 +22,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.ResourcePatternResolver;
+
+import javax.sql.DataSource;
 
 /**
  * @author Xavier
@@ -53,6 +56,14 @@ public class DatabaseConfig {
         return hikariDataSource;
     }
 
+    /**
+     * mybatis-plus 文档对编码式配置的说明很少，总之先照源码抄吧。
+     * <p>
+     * 另外，如果我们不是自定义 MybatisSqlSessionFactoryBean 的话，其他很多组件都可以托管给 Spring</br>
+     * 例如 {@link AutoUpdateTimestampOfCreateAndUpdateMetaObjectHandler} 定义为 Spring Bean 便可自动注册，而不需要在此处显示指定
+     *
+     * @see MybatisPlusAutoConfiguration#sqlSessionFactory(DataSource)
+     */
     @Bean("webAppSqlSessionFactory")
     public SqlSessionFactory sqlSessionFactory(@Qualifier("webAppDataSource") HikariDataSource hikariDataSource) {
         // 这个才能使 Mybatis-plus 生效(否则无法映射数据库操作方法)
@@ -87,7 +98,7 @@ public class DatabaseConfig {
             registry.register(JdbcType.VARCHAR, new UserConfigurationTypeHandler());
 
             // 自动设置时间戳
-            GlobalConfig globalConfig= GlobalConfigUtils.defaults();
+            GlobalConfig globalConfig = GlobalConfigUtils.defaults();
             globalConfig.setMetaObjectHandler(new AutoUpdateTimestampOfCreateAndUpdateMetaObjectHandler());
             mybatisSqlSessionFactoryBean.setGlobalConfig(globalConfig);
 

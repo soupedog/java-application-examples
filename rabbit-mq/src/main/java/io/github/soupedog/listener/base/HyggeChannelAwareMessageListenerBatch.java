@@ -25,10 +25,10 @@ public abstract class HyggeChannelAwareMessageListenerBatch<T> implements HyggeL
     protected String environmentName;
     protected long requeueToTailMillisecondInterval = 500L;
     protected int maxRequeueTimes = 500;
-    protected static String HEADERS_KEY_ENVIRONMENT_NAME = DEFAULT_HEADERS_KEY_ENVIRONMENT_NAME;
-    protected static String HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER = DEFAULT_HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER;
+    protected static String headersKeyEnvironmentName = DEFAULT_HEADERS_KEY_ENVIRONMENT_NAME;
+    protected static String headersKeyRequeueToTailCounter = DEFAULT_HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER;
 
-    public HyggeChannelAwareMessageListenerBatch(String listenerName, String environmentName) {
+    protected HyggeChannelAwareMessageListenerBatch(String listenerName, String environmentName) {
         this.listenerName = listenerName;
         this.environmentName = environmentName;
     }
@@ -129,7 +129,7 @@ public abstract class HyggeChannelAwareMessageListenerBatch<T> implements HyggeL
     @Override
     public boolean isRequeueEnable(HyggeRabbitMqBatchListenerContext<T> context) {
         for (HyggeRabbitMQMessageItem<T> item : context.getRawMessageList()) {
-            String messageEnvironmentName = getValueFromHeaders(item, HEADERS_KEY_ENVIRONMENT_NAME, true);
+            String messageEnvironmentName = getValueFromHeaders(item, headersKeyEnvironmentName, true);
 
             if (!environmentName.equals(messageEnvironmentName) && parameterHelper.isNotEmpty(messageEnvironmentName)) {
                 item.setStatus(StatusEnums.NEEDS_REQUEUE);
@@ -176,9 +176,9 @@ public abstract class HyggeChannelAwareMessageListenerBatch<T> implements HyggeL
 
                     Message message = item.getMessage();
 
-                    int requeueCounter = parameterHelper.integerFormatOfNullable(HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER, getValueFromHeaders(item, HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER, true), 0);
+                    int requeueCounter = parameterHelper.integerFormatOfNullable(headersKeyRequeueToTailCounter, getValueFromHeaders(item, headersKeyRequeueToTailCounter, true), 0);
 
-                    requeueToTail(channel, message, HEADERS_KEY_REQUEUE_TO_TAIL_COUNTER, requeueCounter, maxRequeueTimes);
+                    requeueToTail(channel, message, headersKeyRequeueToTailCounter, requeueCounter, maxRequeueTimes);
                     item.setStatus(StatusEnums.REQUEUE_SUCCESS);
                 } catch (Exception e) {
                     item.setStatus(StatusEnums.REQUEUE_FAILURE);
@@ -215,13 +215,7 @@ public abstract class HyggeChannelAwareMessageListenerBatch<T> implements HyggeL
                     }
 
                     List<HyggeRabbitMQMessageItem<T>> unexpectedItemList = collectionHelper.filterNonemptyItemAsArrayList(false, needsRequeueMessageList,
-                            (item -> {
-                                if (!item.getStatus().equals(StatusEnums.REQUEUE_SUCCESS)) {
-                                    return item;
-                                } else {
-                                    return null;
-                                }
-                            })
+                            (item -> StatusEnums.REQUEUE_SUCCESS.equals(item.getStatus()) ? null : item)
                     );
 
                     for (HyggeRabbitMQMessageItem<T> item : unexpectedItemList) {
