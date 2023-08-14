@@ -12,6 +12,7 @@
     <modules>
         <module>rabbit-mq</module>
         <module>mybatis-plus-postgre</module>
+        <module>jpa-mysql</module>
     </modules>
 
     <properties>
