@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="io.github.soupedog.dao.UserMapper">
+<mapper namespace="io.github.soupedog.mybatis.dao.UserMapper">
     <!--语句里加 ";" 在这里反而是个坏习惯， mybatis 插件机制模板里提前用 ";" 终止语句会给插件功能实现带来麻烦-->
 
     <sql id="AllColumnList">uid,"NAME",balance,user_sex,user_state,"configuration",create_ts,last_update_ts</sql>
@@ -74,7 +74,7 @@
         </trim>
     </update>
 
-    <select id="customQueryUserMultiple" resultType="io.github.soupedog.domain.po.User">
+    <select id="customQueryUserMultiple" resultType="io.github.soupedog.mybatis.domain.po.User">
         SELECT
         <include refid="AllColumnList"/>
         FROM local_test."user"
