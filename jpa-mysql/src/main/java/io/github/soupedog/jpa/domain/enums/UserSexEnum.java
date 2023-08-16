@@ -17,7 +17,8 @@ public enum UserSexEnum {
     /**
      * 男
      */
-    MAN(1, "MAN");
+    MAN(1, "MAN"),
+    ;
 
     UserSexEnum(Integer index, String value) {
         this.index = index;

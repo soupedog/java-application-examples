@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -42,9 +43,24 @@ public class UserController extends HyggeWebUtilContainer implements UserControl
     }
 
     @Override
+    @GetMapping("/user/custom/multiple")
+    public ResponseEntity<?> customQueryUserByPage(@RequestParam(value = "maxId", defaultValue = "100") Long maxId,
+                                                   @RequestParam(value = "currentPage", defaultValue = "1") int currentPage,
+                                                   @RequestParam(value = "pageSize", defaultValue = "5") int pageSize) {
+        return success(userService.customQueryUserByPage(maxId, currentPage, pageSize));
+    }
+
+    @Override
+    @GetMapping("/user/custom/multiple/hql")
+    public ResponseEntity<?> customQueryUserByPageHQL(@RequestParam(value = "maxId", defaultValue = "100") Long maxId,
+                                                      @RequestParam(value = "currentPage", defaultValue = "1") int currentPage,
+                                                      @RequestParam(value = "pageSize", defaultValue = "5") int pageSize) {
+        return success(userService.queryUserListByMaxIdHQL(maxId, currentPage, pageSize));
+    }
+
+    @Override
     @PutMapping("/user/custom/increaseCreate")
     public ResponseEntity<?> customIncreaseCreateTs() {
         return success(userService.customIncreaseCreate());
     }
-
 }

@@ -34,7 +34,7 @@ import java.util.List;
 public class Investor extends BasePO {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long iId;
+    private Long iid;
     private String name;
     // Investor 对象放弃维护关联表，只以 CapitalPool.investors 属性的关联关系为准；饿汉模式是为了支持序列化，否则序列化时饿汉模式会导致异常
     @ManyToMany(mappedBy = "investors", fetch = FetchType.EAGER)

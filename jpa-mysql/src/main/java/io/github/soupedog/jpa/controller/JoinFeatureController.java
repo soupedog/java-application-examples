@@ -46,7 +46,7 @@ public class JoinFeatureController extends HyggeWebUtilContainer implements Join
 
     @Override
     @PostMapping("/join/capitalPool")
-    public ResponseEntity<?> saveCapitalPool(CreateCapitalPoolRequestDTO createCapitalPoolRequestDTO) {
+    public ResponseEntity<?> saveCapitalPool(@RequestBody CreateCapitalPoolRequestDTO createCapitalPoolRequestDTO) {
         // PO 部分属性设置了不参与 json 序列化反序列化，这里 DTO 没法图方便省略了
 
         CapitalPool capitalPool = createCapitalPoolRequestDTO.getCapitalPool();

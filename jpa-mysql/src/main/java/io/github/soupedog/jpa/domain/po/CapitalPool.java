@@ -8,6 +8,7 @@ import lombok.Generated;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.cfg.AvailableSettings;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -41,7 +42,7 @@ public class CapitalPool extends BasePO {
     private Long cpId;
     private String name;
     /**
-     * 用 capitalPool_investor_mapping 的新表保存 资金池-投资人 关联关系(此处会强制生成数据库层面的外键)
+     * 用 capitalPool_investor_mapping 的新表保存 资金池-投资人 关联关系(即便调整了 {@link AvailableSettings#HBM2DDL_DEFAULT_CONSTRAINT_MODE}，此处仍会强制生成数据库层面的外键)
      * <p>
      * {@link JsonIgnore} 是防止序列化/反序列化循环 Investor-CapitalPool 互相持有对方
      */
@@ -49,14 +50,14 @@ public class CapitalPool extends BasePO {
     @ManyToMany
     @JoinTable(
             name = "capitalPool_investor_mapping",
-            // name:关联字段在中间表的别名  referencedColumnName:当前表关联字段名称
+            // name:当前对象关联字段在中间表的名称  referencedColumnName:当前对象关联字段名称
             joinColumns = {@JoinColumn(name = "cpId_inDB", referencedColumnName = "cpId")},
-            // 关联关系另一方，其他属性同 joinColumns
-            inverseJoinColumns = {@JoinColumn(name = "iId_inDB", referencedColumnName = "iId")}
+            // 与 joinColumns 含义相同，只不过是描述关联关系的另一方
+            inverseJoinColumns = {@JoinColumn(name = "iid_inDB", referencedColumnName = "iid")}
     )
     private List<Investor> investors;
     /**
-     * CapitalPool 表存 User 的 uid 做关联(此处不会创建数据库层面的外键，但插入时会自动查询 User 表进行验证)<br/>
+     * CapitalPool 表存 User 的 uid 做关联(调整了 {@link AvailableSettings#HBM2DDL_DEFAULT_CONSTRAINT_MODE} 所以此处不会创建数据库层面的外键，但插入时会自动查询 User 表进行验证)<br/>
      */
     @ManyToOne
     @JoinColumn(name = "uid")

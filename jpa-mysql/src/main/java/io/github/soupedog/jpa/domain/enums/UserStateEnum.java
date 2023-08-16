@@ -13,7 +13,8 @@ public enum UserStateEnum {
     /**
      * 激活
      */
-    ACTIVE(1, "激活");
+    ACTIVE(1, "激活"),
+    ;
 
     UserStateEnum(Integer index, String value) {
         this.index = index;
