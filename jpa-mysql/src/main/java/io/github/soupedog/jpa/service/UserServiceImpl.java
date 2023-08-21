@@ -9,6 +9,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
+
 /**
  * @author Xavier
  * @date 2023/8/15
@@ -23,6 +25,7 @@ public class UserServiceImpl {
         return userDao.save(user);
     }
 
+    @Transactional(Transactional.TxType.NEVER)
     public User queryUserByUid(Long uid) {
         // example 赋什么属性查询就要求什么属性
         Example<User> example = Example.of(User.builder().uid(uid).build());

@@ -10,7 +10,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * <p/>
  * <a href="https://dev.mysql.com/doc">MySQL 文档</a>
  * <p/>
- * <a href="http://localhost:8080/swagger-ui/index.html">本地 Swagger 链接</a>
+ * <a href="http://localhost:8080/swagger-ui/index.html">本地 Swagger 控制台</a>
  *
  * @author Xavier
  * @date 2023/8/15
