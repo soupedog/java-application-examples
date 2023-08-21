@@ -31,7 +31,7 @@ import javax.sql.DataSource;
  * @since 1.0
  */
 @Configuration
-@MapperScan(basePackages = {"io.github.soupedog.dao"}, sqlSessionFactoryRef = "webAppSqlSessionFactory")
+@MapperScan(basePackages = {"io.github.soupedog.mybatis.dao"}, sqlSessionFactoryRef = "webAppSqlSessionFactory")
 public class DatabaseConfig {
     @Value("${db.userName:postgres}")
     private String userName;
@@ -72,7 +72,7 @@ public class DatabaseConfig {
         mybatisSqlSessionFactoryBean.setDataSource(hikariDataSource);
 
         VFS.addImplClass(SpringBootVFS.class);
-        String typeAliasesPackage = "io.github.soupedog.domain.po;";
+        String typeAliasesPackage = "io.github.soupedog.mybatis.domain.po;";
         // 扫描Mybatis所用到的返回entity类型
         mybatisSqlSessionFactoryBean.setTypeAliasesPackage(typeAliasesPackage);
         ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();

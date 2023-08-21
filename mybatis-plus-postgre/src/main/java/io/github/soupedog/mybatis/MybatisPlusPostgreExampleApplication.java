@@ -14,7 +14,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * <p/>
  * <a href="https://www.baomidou.com/">mybatis-plus 参考资料</a>
  * <p/>
- * <a href="http://localhost:8080/swagger-ui/index.html">本地 Swagger 链接</a>
+ * <a href="http://localhost:8080/swagger-ui/index.html">本地 Swagger 控制台</a>
  *
  * @author Xavier
  * @date 2023/5/15
