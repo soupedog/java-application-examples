@@ -29,7 +29,7 @@ public interface HyggeListenerOperator {
         Map<String, Object> headers = messageProperties.getHeaders();
 
         if (requeueCounter < maxRequeueTimes) {
-            headers.put(headersCounterKey, Integer.valueOf(requeueCounter + 1).toString());
+            headers.put(headersCounterKey, Integer.toString(requeueCounter + 1));
         } else {
             throw new InternalRuntimeException("Exceeds the maximum(" + maxRequeueTimes + ") number of requeue-to-tail.");
         }

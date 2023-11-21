@@ -91,7 +91,7 @@ public class HyggeRabbitMQMessageItem<T> {
      * 防止 NACK 状态分散各个 try-catch 中，仅需在 ack 阶段前调用该方法进行检测并赋值
      */
     public void nackStatusCheckAndReset() {
-        // 仅允许 NEEDS_NACK 状态发送异常后迁移到 NEEDS_NACK 状态
+        // 仅允许 NEEDS_ACK 状态发送异常后迁移到 NEEDS_NACK 状态
         if (!isAutoAckTriggered() && statusExpected(StatusEnums.NEEDS_ACK) && isExceptionOccurred()) {
             this.status = StatusEnums.NEEDS_NACK;
         }

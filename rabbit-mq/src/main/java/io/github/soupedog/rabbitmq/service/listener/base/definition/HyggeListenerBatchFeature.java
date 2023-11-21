@@ -25,7 +25,7 @@ public interface HyggeListenerBatchFeature<T> extends HyggeListenerBaseFeature, 
     /**
      * 尝试将标记了 {@link StatusEnums#NEEDS_REQUEUE} 的消息恢复到等效于被消费前的状态
      * <p>
-     * 注意：默认实现存在消息丢失的风险
+     * 注意：默认实现存在消息丢失的风险，requeue 机制行为如下
      * <pre>
      *     ① 先将当前消息进行 ACK
      *     ② 检查重回队列次数是否超出上限

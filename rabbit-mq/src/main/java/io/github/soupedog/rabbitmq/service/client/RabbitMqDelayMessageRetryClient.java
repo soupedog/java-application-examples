@@ -11,6 +11,7 @@ import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 
 import java.time.Duration;
+import java.util.StringJoiner;
 
 /**
  * 延迟队列方式进行消息重试
@@ -21,7 +22,7 @@ import java.time.Duration;
  */
 public class RabbitMqDelayMessageRetryClient extends HyggeWebUtilContainer {
     private static final Logger log = LoggerFactory.getLogger(RabbitMqDelayMessageRetryClient.class);
-    protected String prefix = "hygge-retry-";
+    protected String prefix = "hygge-retry";
     private RabbitAdmin rabbitAdmin;
     /**
      * 该值为空则会为每个需要重试机制的 queue 单独创建 exchange 进行延迟队列重试行为，以防止共享 exchange 引发广播机制而通知多个 queue
@@ -36,8 +37,10 @@ public class RabbitMqDelayMessageRetryClient extends HyggeWebUtilContainer {
         if (parameterHelper.isNotEmpty(staticRetryExchangeName)) {
             return staticRetryExchangeName;
         }
-
-        return String.format(prefix + "%s", rawExchange);
+        return new StringJoiner("-")
+                .add(prefix)
+                .add(rawExchange)
+                .toString();
     }
 
     public String getDelayExchangeName(Queue rawQueue, Configuration configuration) {
@@ -45,27 +48,56 @@ public class RabbitMqDelayMessageRetryClient extends HyggeWebUtilContainer {
             return staticRetryExchangeName;
         }
 
-        return String.format(prefix + "extra-%s", rawQueue.getName());
+        return new StringJoiner("-")
+                .add(prefix)
+                .add("extra")
+                .add(rawQueue.getName())
+                .toString();
     }
 
     public String getDelayRoutingKey(String rawRoutingKey, Configuration configuration) {
-        return String.format(prefix + "%s-%s-%s", rawRoutingKey, configuration.getMaxRetryAsString(), configuration.getRetryInterval().toString());
+        return new StringJoiner("-")
+                .add(prefix)
+                .add(rawRoutingKey)
+                .add(configuration.getMaxRetryAsString())
+                .add(configuration.getRetryInterval().toString())
+                .toString();
     }
 
     public String getDelayRoutingKey(Queue rawQueue, Configuration configuration) {
-        return String.format(prefix + "extra-%s-%s-%s", rawQueue.getName(), configuration.getMaxRetryAsString(), configuration.getRetryInterval().toString());
+        return new StringJoiner("-")
+                .add(prefix)
+                .add("extra")
+                .add(rawQueue.getName())
+                .add(configuration.getMaxRetryAsString())
+                .add(configuration.getRetryInterval().toString())
+                .toString();
     }
 
     public String getDelayQueueName(String rawQueueName, String rawExchange, String rawRoutingKey, Configuration configuration) {
         if (parameterHelper.isNotEmpty(rawQueueName)) {
-            return String.format("%s-%s-%s", rawQueueName, configuration.getMaxRetryAsString(), configuration.getRetryInterval().toString());
+            return new StringJoiner("-")
+                    .add(rawQueueName)
+                    .add(configuration.getMaxRetryAsString())
+                    .add(configuration.getRetryInterval().toString())
+                    .toString();
         }
 
-        return String.format(prefix + "%s-%s-%s-%s", rawExchange, rawRoutingKey, configuration.getMaxRetryAsString(), configuration.getRetryInterval().toString());
+        return new StringJoiner("-")
+                .add(prefix)
+                .add(rawExchange)
+                .add(rawRoutingKey)
+                .add(configuration.getMaxRetryAsString())
+                .add(configuration.getRetryInterval().toString())
+                .toString();
     }
 
     protected String getDelayQueueName(Queue rawQueue, Configuration configuration) {
-        return String.format("%s-%s-%s", rawQueue.getName(), configuration.getMaxRetryAsString(), configuration.getRetryInterval().toString());
+        return new StringJoiner("-")
+                .add(rawQueue.getName())
+                .add(configuration.getMaxRetryAsString())
+                .add(configuration.getRetryInterval().toString())
+                .toString();
     }
 
     public String getDelayRoutingKeyToDelay(Queue rawQueue, Configuration configuration) {
@@ -101,7 +133,7 @@ public class RabbitMqDelayMessageRetryClient extends HyggeWebUtilContainer {
         binding.setAdminsThatShouldDeclare(rabbitAdmin);
         rabbitAdmin.declareBinding(binding);
 
-        log.info("Init retry resource. exchange:{} routingKey:{} delayQueueName:{} ttl:{}", delayExchangeName, delayRoutingKey, delayQueueName, configuration.retryInterval.toString());
+        log.info("Init retry resource. exchange:{} routingKey:{} delayQueueName:{} ttl:{}", delayExchangeName, delayRoutingKey, delayQueueName, configuration.retryInterval);
     }
 
     /**
@@ -139,7 +171,7 @@ public class RabbitMqDelayMessageRetryClient extends HyggeWebUtilContainer {
         binding2.setAdminsThatShouldDeclare(rabbitAdmin);
         rabbitAdmin.declareBinding(binding2);
 
-        log.info("Init retry resource. exchange:{} routingKey:{} delayQueueName:{} ttl:{}", delayExchangeName, delayRoutingKey, delayQueueName, configuration.retryInterval.toString());
+        log.info("Init retry resource. exchange:{} routingKey:{} delayQueueName:{} ttl:{}", delayExchangeName, delayRoutingKey, delayQueueName, configuration.retryInterval);
     }
 
     public RabbitAdmin getRabbitAdmin() {
@@ -176,7 +208,7 @@ public class RabbitMqDelayMessageRetryClient extends HyggeWebUtilContainer {
             if (maxRetry <= 0) {
                 return "infinity";
             }
-            return Integer.valueOf(maxRetry).toString();
+            return Integer.toString(maxRetry);
         }
 
         public int getMaxRetry() {

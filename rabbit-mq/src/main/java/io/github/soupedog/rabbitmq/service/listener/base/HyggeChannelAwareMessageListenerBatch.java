@@ -253,6 +253,8 @@ public abstract class HyggeChannelAwareMessageListenerBatch<T> implements HyggeL
     public void printMessageEntityLog(HyggeRabbitMqBatchListenerContext<T> context, List<HyggeRabbitMQMessageItem<T>> messageList, String prefixInfo) {
         StringBuilder stringBuilder = new StringBuilder(prefixInfo);
         stringBuilder.append(ConstantParameters.LINE_SEPARATOR);
+
+        // 异常去重，保障一个异常日志仅输出一次，消息用 exceptionId 与异常建立关联关系
         HashMap<Throwable, String> exceptionMap = null;
 
         for (HyggeRabbitMQMessageItem<T> item : messageList) {
