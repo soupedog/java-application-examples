@@ -3,6 +3,7 @@ package io.github.soupedog.rabbitmq.utils;
 import hygge.web.template.HyggeWebUtilContainer;
 import io.github.soupedog.rabbitmq.domain.MQLogInfo;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
@@ -16,6 +17,8 @@ import java.util.List;
  * @since 1.0
  */
 public class RabbitmqTemplateBuilder extends HyggeWebUtilContainer {
+    private static final Logger log = LoggerFactory.getLogger(RabbitmqTemplateBuilder.class);
+
     private RabbitmqTemplateBuilder() {
         throw new IllegalStateException("Utility class");
     }
@@ -54,6 +57,10 @@ public class RabbitmqTemplateBuilder extends HyggeWebUtilContainer {
             return null;
         }
 
+        if (target.isEmpty()) {
+            return target;
+        }
+
         try {
             String firstVal = target.substring(0, 1);
             switch (firstVal) {
@@ -65,8 +72,9 @@ public class RabbitmqTemplateBuilder extends HyggeWebUtilContainer {
                     return target;
             }
         } catch (Exception e) {
+            // 此处异常是 com.fasterxml.jackson.core.JsonParseException 异常的多层包装，已自带原文信息，故此处不再附加 target 原文
+            log.warn("Fal to format string to json, so leave the string as is as the return value.(Although this exception does not interrupt your business logic, please fix it in time!)", e);
             return target;
         }
     }
-
 }
