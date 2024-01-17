@@ -44,6 +44,7 @@ public class RabbitMqConfig {
         cachingConnectionFactory.setUsername(properties.getUserName());
         cachingConnectionFactory.setPassword(properties.getPassword());
 
+        // 与是否开启消息投递到 Exchange 成功回调有关，此处 NONE 为禁用回调(投递失败仍然有 error 级日志)
         cachingConnectionFactory.setPublisherConfirmType(CachingConnectionFactory.ConfirmType.NONE);
         // rabbitTemplate.setMandatory(true) 时，检测 exchange 是否正确投递到 queue
         cachingConnectionFactory.setPublisherReturns(true);

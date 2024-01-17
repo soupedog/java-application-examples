@@ -27,7 +27,12 @@ public class RabbitmqTemplateBuilder extends HyggeWebUtilContainer {
         RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
         // 开启回调处理
         rabbitTemplate.setMandatory(true);
+        // 指定投递消息前要执行的某种逻辑的钩子函数(此处示例为没有钩子函数)
         rabbitTemplate.setBeforePublishPostProcessors();
+
+        // 设置消息投递到 Exchange 的回调函数(ConnectionFactory 中为 ConfirmType.NONE 时将失效)
+        rabbitTemplate.setConfirmCallback((correlationData, ack, cause) -> {});
+
         rabbitTemplate.setReturnsCallback(returned -> {
             MQLogInfo mqLogInfo = new MQLogInfo(modelName);
             MQLogInfo.MessageInfo messageInfo = new MQLogInfo.MessageInfo();
