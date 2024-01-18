@@ -33,6 +33,7 @@ public class RabbitmqTemplateBuilder extends HyggeWebUtilContainer {
         // 设置消息投递到 Exchange 的回调函数(ConnectionFactory 中为 ConfirmType.NONE 时将失效)
         rabbitTemplate.setConfirmCallback((correlationData, ack, cause) -> {});
 
+        // 消息未能投递到某个 Queue 时的回调函数
         rabbitTemplate.setReturnsCallback(returned -> {
             MQLogInfo mqLogInfo = new MQLogInfo(modelName);
             MQLogInfo.MessageInfo messageInfo = new MQLogInfo.MessageInfo();

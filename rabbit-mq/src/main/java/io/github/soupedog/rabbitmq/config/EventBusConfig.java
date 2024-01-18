@@ -79,6 +79,9 @@ public class EventBusConfig {
         return topicExchange;
     }
 
+    /**
+     * 这个队列没有消费者
+     */
     @Bean("deadMessageQueue")
     public Queue deadMessageQueue(@Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin) {
         Queue queue = QueueBuilder
@@ -88,6 +91,9 @@ public class EventBusConfig {
         return queue;
     }
 
+    /**
+     * 匹配任何 Headers 中有 event 类型的消息(不存在独占唯一，event-A 会匹配到其他队列，也会冗余投递到此处 )
+     */
     @Bean
     public Binding bindingDeadMessageQueue(@Qualifier("mainRabbitAdmin") RabbitAdmin rabbitAdmin, @Qualifier("deadMessageQueue") Queue queue, @Qualifier("eventBusHeadersExchange") HeadersExchange exchange) {
         Binding binding = BindingBuilder.bind(queue).to(exchange).whereAny(RabbitClient.KEY_EVENT_TYPE).exist();
