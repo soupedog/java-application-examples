@@ -1,9 +1,9 @@
 package io.github.soupedog.rabbitmq.service.client;
 
+import hygge.commons.constant.ConstantParameters;
+import hygge.util.template.HyggeJsonUtilContainer;
 import io.github.soupedog.rabbitmq.config.configuration.RabbitMqConfigurationProperties;
 import io.github.soupedog.rabbitmq.service.listener.base.definition.HyggeRabbitMessageEntity;
-import hygge.commons.constant.ConstantParameters;
-import hygge.web.template.HyggeWebUtilContainer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageBuilder;
@@ -22,7 +22,7 @@ import java.nio.charset.StandardCharsets;
  */
 @Slf4j
 @Component
-public class RabbitClient extends HyggeWebUtilContainer {
+public class RabbitClient extends HyggeJsonUtilContainer {
     public static final String HEADERS_KEY_HYGGE_UNIQUE_ID = "hygge-unique-id";
     public static final String KEY_EVENT_TYPE = "event-type";
 

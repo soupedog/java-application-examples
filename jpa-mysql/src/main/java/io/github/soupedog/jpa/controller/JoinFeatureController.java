@@ -1,6 +1,6 @@
 package io.github.soupedog.jpa.controller;
 
-import hygge.web.template.HyggeWebUtilContainer;
+import hygge.util.template.HyggeJsonUtilContainer;
 import hygge.web.template.definition.HyggeController;
 import io.github.soupedog.jpa.controller.doc.JoinFeatureControllerDoc;
 import io.github.soupedog.jpa.domain.dto.CreateCapitalPoolRequestDTO;
@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @since 1.0
  */
 @RestController
-public class JoinFeatureController extends HyggeWebUtilContainer implements JoinFeatureControllerDoc, HyggeController<ResponseEntity<?>> {
+public class JoinFeatureController extends HyggeJsonUtilContainer implements JoinFeatureControllerDoc, HyggeController<ResponseEntity<?>> {
     @Autowired
     private InvestorServiceImpl investorService;
     @Autowired

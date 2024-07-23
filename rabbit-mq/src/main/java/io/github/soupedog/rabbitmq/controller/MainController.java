@@ -1,7 +1,7 @@
 package io.github.soupedog.rabbitmq.controller;
 
 import hygge.commons.constant.enums.StringCategoryEnum;
-import hygge.web.template.HyggeWebUtilContainer;
+import hygge.util.template.HyggeJsonUtilContainer;
 import hygge.web.template.definition.HyggeController;
 import io.github.soupedog.rabbitmq.domain.User;
 import io.github.soupedog.rabbitmq.service.client.RabbitClient;
@@ -28,7 +28,7 @@ import static io.github.soupedog.rabbitmq.service.listener.base.definition.Hygge
  * @since 1.0
  */
 @RestController
-public class MainController extends HyggeWebUtilContainer implements HyggeController<ResponseEntity<?>> {
+public class MainController extends HyggeJsonUtilContainer implements HyggeController<ResponseEntity<?>> {
     @Autowired
     private RabbitClient rabbitClient;
     @Autowired

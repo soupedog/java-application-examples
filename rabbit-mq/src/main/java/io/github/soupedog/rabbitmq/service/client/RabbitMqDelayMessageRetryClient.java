@@ -1,6 +1,6 @@
 package io.github.soupedog.rabbitmq.service.client;
 
-import hygge.web.template.HyggeWebUtilContainer;
+import hygge.util.template.HyggeJsonUtilContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Binding;
@@ -20,7 +20,7 @@ import java.util.StringJoiner;
  * @date 2023/4/18
  * @since 1.0
  */
-public class RabbitMqDelayMessageRetryClient extends HyggeWebUtilContainer {
+public class RabbitMqDelayMessageRetryClient extends HyggeJsonUtilContainer {
     private static final Logger log = LoggerFactory.getLogger(RabbitMqDelayMessageRetryClient.class);
     protected String prefix = "hygge-retry";
     private RabbitAdmin rabbitAdmin;

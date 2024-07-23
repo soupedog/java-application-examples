@@ -22,7 +22,7 @@ public interface UserDao extends JpaRepository<User, Long> {
     /**
      * 接口按特定规则命名会自动生成数据库操作方法
      * <p>
-     * <a href="https://docs.spring.io/spring-data/jpa/docs/2.7.14/reference/html/#jpa.query-methods.query-creation">名称语法糖</a>
+     * <a href="https://docs.spring.io/spring-data/jpa/docs/2.7.18/reference/html/#jpa.query-methods.query-creation">名称语法糖</a>
      */
     User findUserByName(String userName);
 

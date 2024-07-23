@@ -1,6 +1,6 @@
 package io.github.soupedog.mybatis.controller;
 
-import hygge.web.template.HyggeWebUtilContainer;
+import hygge.util.template.HyggeJsonUtilContainer;
 import hygge.web.template.definition.HyggeController;
 import io.github.soupedog.mybatis.controller.doc.HouseCustomControllerDoc;
 import io.github.soupedog.mybatis.domain.po.House;
@@ -19,7 +19,7 @@ import java.util.List;
  * @since 1.0
  */
 @RestController
-public class HouseCustomController extends HyggeWebUtilContainer implements HouseCustomControllerDoc, HyggeController<ResponseEntity<?>> {
+public class HouseCustomController extends HyggeJsonUtilContainer implements HouseCustomControllerDoc, HyggeController<ResponseEntity<?>> {
     @Autowired
     private HouseServiceImpl houseService;
 

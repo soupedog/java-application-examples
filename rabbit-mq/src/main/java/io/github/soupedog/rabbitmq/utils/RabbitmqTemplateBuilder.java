@@ -1,6 +1,6 @@
 package io.github.soupedog.rabbitmq.utils;
 
-import hygge.web.template.HyggeWebUtilContainer;
+import hygge.util.template.HyggeJsonUtilContainer;
 import io.github.soupedog.rabbitmq.domain.MQLogInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +16,7 @@ import java.util.List;
  * @date 2023/4/14
  * @since 1.0
  */
-public class RabbitmqTemplateBuilder extends HyggeWebUtilContainer {
+public class RabbitmqTemplateBuilder extends HyggeJsonUtilContainer {
     private static final Logger log = LoggerFactory.getLogger(RabbitmqTemplateBuilder.class);
 
     private RabbitmqTemplateBuilder() {
@@ -31,7 +31,8 @@ public class RabbitmqTemplateBuilder extends HyggeWebUtilContainer {
         rabbitTemplate.setBeforePublishPostProcessors();
 
         // 设置消息投递到 Exchange 的回调函数(ConnectionFactory 中为 ConfirmType.NONE 时将失效)
-        rabbitTemplate.setConfirmCallback((correlationData, ack, cause) -> {});
+        rabbitTemplate.setConfirmCallback((correlationData, ack, cause) -> {
+        });
 
         // 消息未能投递到某个 Queue 时的回调函数
         rabbitTemplate.setReturnsCallback(returned -> {

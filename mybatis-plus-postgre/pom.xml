@@ -11,19 +11,25 @@
 
     <artifactId>mybatis-plus-postgre</artifactId>
 
+    <properties>
+        <mybatis-plus.version>3.5.7</mybatis-plus.version>
+        <freemarker.version>2.3.33</freemarker.version>
+        <postgresql.version>42.3.8</postgresql.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.github.soupedog</groupId>
             <artifactId>hygge-web-toolkit</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-boot-starter</artifactId>
-            <version>3.5.3.1</version>
-        </dependency>
-        <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-boot-starter</artifactId>
+            <version>${mybatis-plus.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springdoc</groupId>
@@ -43,10 +49,41 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!--mybatis-plus 代码生成器-->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-generator</artifactId>
+            <version>${mybatis-plus.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!--模版引擎-->
+        <dependency>
+            <groupId>org.freemarker</groupId>
+            <artifactId>freemarker</artifactId>
+            <version>${freemarker.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.mybatis.generator</groupId>
+                <artifactId>mybatis-generator-maven-plugin</artifactId>
+                <version>1.4.2</version>
+                <configuration>
+                    <!--允许覆盖同名生成的文件，不然会有 xxx.java1 等文件生成-->
+                    <overwrite>true</overwrite>
+                </configuration>
+                <dependencies>
+                    <!--该插件依赖的三方库-->
+                    <dependency>
+                        <groupId>org.postgresql</groupId>
+                        <artifactId>postgresql</artifactId>
+                        <version>${postgresql.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

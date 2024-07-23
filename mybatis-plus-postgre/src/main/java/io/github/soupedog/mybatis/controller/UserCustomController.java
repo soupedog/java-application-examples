@@ -1,6 +1,6 @@
 package io.github.soupedog.mybatis.controller;
 
-import hygge.web.template.HyggeWebUtilContainer;
+import hygge.util.template.HyggeJsonUtilContainer;
 import hygge.web.template.definition.HyggeController;
 import io.github.soupedog.mybatis.controller.doc.UserCustomControllerDoc;
 import io.github.soupedog.mybatis.domain.po.User;
@@ -26,7 +26,7 @@ import java.util.Map;
  * @since 1.0
  */
 @RestController
-public class UserCustomController extends HyggeWebUtilContainer implements UserCustomControllerDoc, HyggeController<ResponseEntity<?>> {
+public class UserCustomController extends HyggeJsonUtilContainer implements UserCustomControllerDoc, HyggeController<ResponseEntity<?>> {
     @Autowired
     private UserServiceImpl userService;
 

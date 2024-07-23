@@ -1,9 +1,9 @@
 package io.github.soupedog.rabbitmq.config.consumer;
 
-import io.github.soupedog.rabbitmq.config.AnnotationConfig;
 import com.rabbitmq.client.Channel;
 import hygge.commons.constant.ConstantParameters;
-import hygge.web.template.HyggeWebUtilContainer;
+import hygge.util.template.HyggeJsonUtilContainer;
+import io.github.soupedog.rabbitmq.config.AnnotationConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.core.Message;
@@ -22,7 +22,7 @@ import java.nio.charset.StandardCharsets;
  */
 @Slf4j
 @Component
-public class AnnotationConsumerConfig extends HyggeWebUtilContainer {
+public class AnnotationConsumerConfig extends HyggeJsonUtilContainer {
 
     /**
      * {@link AnnotationConfig#annotationTopicQueue(RabbitAdmin)}
@@ -59,7 +59,7 @@ public class AnnotationConsumerConfig extends HyggeWebUtilContainer {
 
 
         // 默认是自动处理 ack 模式，此处手动 ack 会二次 ack 抛出异常
-//        channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, false);
+        // channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, false);
     }
 
     private static void printMessage(String logSource, Message message) {

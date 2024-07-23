@@ -19,7 +19,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "example.database")
 public class DatabaseConfiguration implements HyggeSpringConfigurationProperties {
     /**
-     * <a href="https://dev.mysql.com/doc/connector-j/8.1/en/connector-j-time-instants.html">mysql 驱动时区问题</a>
+     * <a href="https://dev.mysql.com/doc/connector-j/en/connector-j-time-instants.html">mysql 驱动时区问题</a>
      * <p>
      * 此处的配置是：对于驱动支持的时间对象，应用时区的时间对象转化为数据库服务端时区等效的时间对象并落库。e.g<br/>
      * 应用端东八区，数据库零时区，应用端生成的 "2000-01-01 08:00:00.000+08:00" 会转成 "2000-01-01 00:00:00.000Z" 落库

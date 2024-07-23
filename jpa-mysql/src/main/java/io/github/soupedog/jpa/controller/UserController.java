@@ -1,6 +1,6 @@
 package io.github.soupedog.jpa.controller;
 
-import hygge.web.template.HyggeWebUtilContainer;
+import hygge.util.template.HyggeJsonUtilContainer;
 import hygge.web.template.definition.HyggeController;
 import io.github.soupedog.jpa.controller.doc.UserControllerDoc;
 import io.github.soupedog.jpa.domain.po.User;
@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @since 1.0
  */
 @RestController
-public class UserController extends HyggeWebUtilContainer implements UserControllerDoc, HyggeController<ResponseEntity<?>> {
+public class UserController extends HyggeJsonUtilContainer implements UserControllerDoc, HyggeController<ResponseEntity<?>> {
     @Autowired
     private UserServiceImpl userService;
 
