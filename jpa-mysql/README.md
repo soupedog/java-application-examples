@@ -16,6 +16,7 @@ docker run -d --name MySQL_8 -p 3306:3306 -v /d/LocalMiddleware/Database/MySQL:/
     - 原生 SQL 查询
     - HQL 查询
 - 对象自动转 JSON 存储到数据库字符串字段
+- 文件存储到数据库并提供文件下载接口
 - JPA 代理的方法自动更新时间戳
 - 根据 PO 对象自动建表
     - 默认建表字段顺序是字典排序，通过用 `LinkedHashMap` 改写 `org.hibernate.cfg.PropertyContainer` 变成以 PO 对象属性定义顺序建表
