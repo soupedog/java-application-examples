@@ -21,4 +21,5 @@ docker run -d --name PostgresSQL_15 -p 5432:5432 -e PGDATA=/var/lib/postgresql/d
     - 批量插入或更新
 - 对象自动转 JSON 存储到数据库字符串字段
 - Mybatis-Plus 代理的方法自动更新时间戳
+- 通过 `mybatis-plus-generator` 根据数据库表信息生成 `PO`/`DAO`/`Service`/`Controller` 层代码
 - SQL 信息输出到日志
