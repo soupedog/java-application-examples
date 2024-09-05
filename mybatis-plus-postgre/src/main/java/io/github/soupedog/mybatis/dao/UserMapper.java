@@ -2,23 +2,36 @@ package io.github.soupedog.mybatis.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import io.github.soupedog.mybatis.domain.po.User;
+import io.github.soupedog.mybatis.domain.po.UserSimple;
+import io.github.soupedog.mybatis.service.impl.UserServiceImpl;
 import org.apache.ibatis.annotations.MapKey;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.sql.Timestamp;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
+ * BaseMapper 绑定的 {@link User} 对象，Mybatis-Plus 自动扩展出的方法要求返回 {@link User}，而自定义的方法的返回值并非必须是 {@link User}
+ *
  * @author Xavier
  * @date 2023/5/15
  * @since 1.0
  */
 @Mapper
 public interface UserMapper extends BaseMapper<User> {
+
+    /**
+     * 用 User 表查询结果返回一个非 PO 对象
+     * <p>
+     * {@link UserServiceImpl#queryUserSimpleByUid(Long)} Mybatis-Plus 扩展方法因为 Mapper 类型限制无法直接返回 {@link UserSimple} 实例
+     *
+     * @param uid 唯一标识
+     */
+    UserSimple customSelectOneByUid(Long uid);
+
     /**
      * 不会覆盖数据库表设置的 defaultValue 的方式插入一个 User 对象（IService 已经提供此功能，该方法仅为演示 mapper.xml 用法）
      *
@@ -51,5 +64,5 @@ public interface UserMapper extends BaseMapper<User> {
      * @return HashMap Key-Value name-User
      */
     @MapKey("name")
-    HashMap<String, User> customQueryUserMultiple(@Param("uidCollection") Collection<Long> uidCollection, @Param("orderInfo") String orderInfo);
+    Map<String, User> customQueryUserMultiple(@Param("uidCollection") Collection<Long> uidCollection, @Param("orderInfo") String orderInfo);
 }

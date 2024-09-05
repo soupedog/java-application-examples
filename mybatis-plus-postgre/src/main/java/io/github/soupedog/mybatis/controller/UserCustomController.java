@@ -55,6 +55,12 @@ public class UserCustomController extends HyggeJsonUtilContainer implements User
     }
 
     @Override
+    @GetMapping("/user/custom/single")
+    public ResponseEntity<?> customQueryUserSingle(@RequestParam("uid") Long uid) {
+        return success(userService.queryUserSimpleByUid(uid));
+    }
+
+    @Override
     @GetMapping("/user/custom/multiple")
     public ResponseEntity<?> customQueryUserMultiple(@RequestParam("uid") Collection<Long> uidCollection) {
         return success(userService.customQueryUserMultiple(uidCollection));

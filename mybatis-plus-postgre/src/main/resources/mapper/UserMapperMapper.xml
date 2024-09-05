@@ -74,7 +74,7 @@
         </trim>
     </update>
 
-    <select id="customQueryUserMultiple" resultType="io.github.soupedog.mybatis.domain.po.User">
+    <select id="customQueryUserMultiple">
         SELECT
         <include refid="AllColumnList"/>
         FROM local_test."user"
@@ -85,5 +85,12 @@
             </if>
         </trim>
         <if test="orderInfo != null">ORDER BY ${orderInfo}</if>
+    </select>
+
+    <!-- 在配置了 PO 扫描包路径的情况下 resultType 都是非必须的，此处仅演示有这个属性。移除后 Mybatis 插件会提示爆红，但实际上运行是没问题的 -->
+    <!-- 观察上方其他方法，感知上是：方法返回值与 BaseMaper 绑定类型一致时，去掉 resultType 也不会爆红 -->
+    <select id="customSelectOneByUid" resultType="io.github.soupedog.mybatis.domain.po.UserSimple">
+        SELECT uid, balance
+        FROM local_test."user" LIMIT 1
     </select>
 </mapper>

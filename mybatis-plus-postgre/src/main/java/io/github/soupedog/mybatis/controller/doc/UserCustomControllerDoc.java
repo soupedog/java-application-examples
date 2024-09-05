@@ -27,5 +27,7 @@ public interface UserCustomControllerDoc {
     )
     ResponseEntity<?> customUpdateUser(Long uid, Map<String, Object> data);
 
+    ResponseEntity<?> customQueryUserSingle(Long uid);
+
     ResponseEntity<?> customQueryUserMultiple(Collection<Long> uidCollection);
 }

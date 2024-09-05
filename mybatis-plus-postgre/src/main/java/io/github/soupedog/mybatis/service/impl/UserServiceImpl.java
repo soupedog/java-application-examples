@@ -5,9 +5,11 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import hygge.util.UtilCreator;
 import hygge.util.bo.ColumnInfo;
+import hygge.util.definition.CollectionHelper;
 import hygge.util.definition.DaoHelper;
 import io.github.soupedog.mybatis.dao.UserMapper;
 import io.github.soupedog.mybatis.domain.po.User;
+import io.github.soupedog.mybatis.domain.po.UserSimple;
 import io.github.soupedog.mybatis.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -53,6 +56,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 原理是先查询，不存在则进行覆盖式更新
         saveOrUpdate(user);
         return user;
+    }
+
+    public List<Object> queryUserSimpleByUid(Long uid) {
+        UserSimple userSimple = baseMapper.customSelectOneByUid(uid);
+
+        LambdaQueryWrapper<User> queryWrapper = Wrappers.<User>lambdaQuery()
+                // 仅查询 uid 和 balance 两个属性
+                .select(User::getUid, User::getBalance)
+                .eq(User::getUid, uid);
+        return UtilCreator.INSTANCE.getDefaultInstance(CollectionHelper.class)
+                .createCollection(userSimple, baseMapper.selectOne(queryWrapper));
     }
 
     /**
