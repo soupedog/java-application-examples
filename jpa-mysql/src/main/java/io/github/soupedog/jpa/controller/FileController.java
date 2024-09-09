@@ -21,7 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.multipart.MultipartFile;
@@ -55,7 +55,7 @@ public class FileController extends HyggeJsonUtilContainer implements HyggeContr
 
     @PostMapping(value = "/file-entity", consumes = "multipart/form-data")
     @ControllerLog(inputParamEnable = false)
-    public ResponseEntity<ArrayList<FileEntity>> saveTimeEntity(@RequestParam("files") List<MultipartFile> filesList) {
+    public ResponseEntity<ArrayList<FileEntity>> saveTimeEntity(@RequestPart("files") List<MultipartFile> filesList) {
         ArrayList<FileEntity> result = new ArrayList<>();
 
         filesList.forEach(item -> {
@@ -126,6 +126,9 @@ public class FileController extends HyggeJsonUtilContainer implements HyggeContr
                 break;
             case "pdf":
                 headers.setContentType(MediaType.APPLICATION_PDF);
+                break;
+            case "mp3":
+                headers.setContentType(MediaType.parseMediaType("audio/mpeg"));
                 break;
             default:
                 displayDirectly = false;
