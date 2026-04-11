@@ -2,10 +2,10 @@ package io.github.soupedog.rabbitmq.config.consumer;
 
 import io.github.soupedog.rabbitmq.config.EventBusConfig;
 import io.github.soupedog.rabbitmq.config.configuration.RabbitMqConfigurationProperties;
-import io.github.soupedog.rabbitmq.service.listener.HyggeListenerBatch;
 import io.github.soupedog.rabbitmq.service.listener.HyggeEventAListener;
 import io.github.soupedog.rabbitmq.service.listener.HyggeEventBListener;
 import io.github.soupedog.rabbitmq.service.listener.HyggeEventCListener;
+import io.github.soupedog.rabbitmq.service.listener.HyggeListenerBatch;
 import io.github.soupedog.rabbitmq.service.listener.HyggeMainListener;
 import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.HeadersExchange;
@@ -44,8 +44,8 @@ public class ConsumerConfig {
         container.setAcknowledgeMode(AcknowledgeMode.MANUAL);
         container.setMessageListener(listener);
         container.setPrefetchCount(1);
-        container.setConcurrentConsumers(1);
-        container.setMaxConcurrentConsumers(1);
+        container.setConcurrentConsumers(3);
+        container.setMaxConcurrentConsumers(3);
         return container;
     }
 

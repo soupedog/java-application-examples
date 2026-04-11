@@ -11,6 +11,7 @@ import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StopWatch;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -34,6 +35,9 @@ public class MainController extends HyggeJsonUtilContainer implements HyggeContr
     @Autowired
     @Qualifier("mainRabbitAdmin")
     private RabbitAdmin admin;
+
+    private String[] eventTypeAray = new String[]{"A", "B", "C"};
+    private String[] routingKeyAray = new String[]{"routingKey-main", "routingKey-main", "routingKey-main"};
 
     @GetMapping("/queue")
     public Object queueInfo(@RequestParam(name = "queueName") String queueName) {
@@ -91,5 +95,35 @@ public class MainController extends HyggeJsonUtilContainer implements HyggeContr
         }
 
         return success(Timestamp.from(Instant.now()));
+    }
+
+    @PostMapping("/exchange/test/event")
+    public Object exchangeTest(@RequestParam(name = "redoTimes", required = false, defaultValue = "1") int redoTimes,
+                               @RequestBody User user) {
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+        for (int i = 0; i < redoTimes; i++) {
+            Message message = rabbitClient.buildMessage(user);
+            int index = i % 3;
+            String eventType = eventTypeAray[index];
+            rabbitClient.sendMessageByEvent(message, eventType);
+        }
+        stopWatch.stop();
+        return success("耗时 (s) ：" + stopWatch.getTotalTimeSeconds());
+    }
+
+    @PostMapping("/exchange/test/main")
+    public Object exchangeTest2(@RequestParam(name = "redoTimes", required = false, defaultValue = "1") int redoTimes,
+                                @RequestBody User user) {
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+        for (int i = 0; i < redoTimes; i++) {
+            Message message = rabbitClient.buildMessage(user);
+            int index = i % 3;
+            String routingKey = routingKeyAray[index];
+            rabbitClient.sendMessageByExchangeAndRoutingKey(message, "main", routingKey);
+        }
+        stopWatch.stop();
+        return success("耗时 (s) ：" + stopWatch.getTotalTimeSeconds());
     }
 }
